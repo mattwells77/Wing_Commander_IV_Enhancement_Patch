@@ -72,12 +72,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>D:\Programming\SDKs\vlc\vlc-3.0.21\include;D:\Programming\SDKs\vlc\libvlcpp;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Programming\SDKs\vlc\vlc-3.0.21\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\vlc-3.0.21\sdk\include;..\..\libvlcpp;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\vlc-3.0.21\sdk\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>D:\Programming\SDKs\vlc\vlc-3.0.21\include;D:\Programming\SDKs\vlc\libvlcpp;$(IncludePath)</IncludePath>
-    <LibraryPath>D:\Programming\SDKs\vlc\vlc-3.0.21\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\vlc-3.0.21\sdk\include;..\..\libvlcpp;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\vlc-3.0.21\sdk\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>D:\Programming\SDKs\vlc\vlc-3.0.21\include;D:\Programming\SDKs\vlc\libvlcpp;$(IncludePath)</IncludePath>
@@ -109,10 +109,10 @@
       <HeaderFileOutput>shaders\compiled_h\%(Filename).h</HeaderFileOutput>
     </FxCompile>
     <PostBuildEvent>
-      <Command>cmd /c copy "$(OutDir)$(TargetName)$(TargetExt)" "D:\Games\Wing Commander IV\WC4_DOS\ddraw.dll"</Command>
+      <Command>call "$(SolutionDir)post_build_copy_to_game_folder.cmd" "$(OutDir)$(TargetName)$(TargetExt)"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
-      <Message>Copy and rename to "ddraw.dll"</Message>
+      <Message>Copy "ddraw.dll" to WC4 game folder.</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -142,10 +142,10 @@
       <HeaderFileOutput>shaders\compiled_h\%(Filename).h</HeaderFileOutput>
     </FxCompile>
     <PostBuildEvent>
-      <Command>cmd /c copy "$(OutDir)$(TargetName)$(TargetExt)" "D:\Games\Wing Commander IV\WC4_DOS\ddraw.dll"</Command>
+      <Command>call "$(SolutionDir)post_build_copy_to_game_folder.cmd" "$(OutDir)$(TargetName)$(TargetExt)"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
-      <Message>Copy and rename to "ddraw.dll"</Message>
+      <Message>Copy "ddraw.dll" to WC4 game folder.</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
