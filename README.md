@@ -1,5 +1,5 @@
 # Wing Commander IV Enhancement Patch
-This patch was created for the Windows version of the PC game "Wing Commander IV".
+This patch was created for the PC game "Wing Commander IV" with the [Windows 95 Upgrade Patch](https://www.wcnews.com/wcpedia/Windows_95_Upgrade) installed.
 
 This patch uses DirectX 11 for rendering and will likely require Windows 10 or greater to use.
 
@@ -14,7 +14,9 @@ HD Movie playback is achieved using [libvlc](https://www.videolan.org/vlc/libvlc
 - Ingame Joystick\Controller configuration utility.
 
 ## Installation:
-- Click on [Releases](https://github.com/mattwells77/Wing_Commander_IV_Enhancement_Patch/releases) and download the latest "wc4w_en_x.x.x.zip" where "x" is the version number and "libvlc_min_pack_3.0.20.zip" files. Extract the contents of these files to your Wing Commander 4 Install directory.
+- For the DOS version of the game, you must first install the [Windows 95 Upgrade Patch](https://www.wcnews.com/wcpedia/Windows_95_Upgrade) by copying the "WC4W.EXE" and "XANLIB.DLL" from this archive to your game folder.
+- For the GOG DVD version of the game, you will only need to copy "WC4W.EXE" to your game folder.
+- Click on [Releases](https://github.com/mattwells77/Wing_Commander_IV_Enhancement_Patch/releases) and download the latest "wc4w_en_x.x.x.zip" where "x" is the version number and "libvlc_min_pack_3.0.21.zip" files. Extract the contents of these files to your Wing Commander 4 Install directory.
 - For optional HD movie playback: Download the [Wing Commander 4 HD Video Pack](https://www.wcnews.com/wcpedia/Wing_Commander_4_HD_Video_Pack) created by ODVS and hosted by the [Wing Commander CIC](https://www.wcnews.com/#). Extract the movies to the "vobs" folder in your Wing Commander 4 Install directory.
 - Once Installed, optional settings can be edited in the "wc4w_en.ini" file. Further details can be found within the file.
 
