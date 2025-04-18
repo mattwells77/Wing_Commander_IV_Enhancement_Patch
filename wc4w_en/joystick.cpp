@@ -35,6 +35,8 @@ using namespace Windows::Gaming::Input;
 JOYSTICKS Joysticks;
 WC4_JOY_AXES wc4_joy_axes{};
 
+LONG WC4_ACTIONS_MAX = static_cast<LONG>(WC4_ACTIONS::Lock_Closest_Enemy);
+
 
 WORD WC4_ACTIONS_KEYS[][2]{
 	0x00, 0x00,		// None,
@@ -112,6 +114,11 @@ WORD WC4_ACTIONS_KEYS[][2]{
 	0x00, 0x42,		// Camera_Missile
 	0x00, 0x43,		// Camera_Victim
 	0x00, 0x44,		// Camera_Track
+
+	0x1D, 0x2F,		// Disable_Video_In_Left_VDU
+	0x00, 0x23,		// Toggle_Normal_Special_Guns
+	0x00, 0x16,		// Lock_Closest_Enemy
+	
 };
 
 
@@ -641,7 +648,7 @@ BOOL JOYSTICK::Profile_Load(const wchar_t* file_path) {
 			MessageBox(nullptr, hNonRoamableId.c_str(), NonRoamableId.c_str(), 0);
 		delete[]pNonRoamableId;
 		*/
-		if (version != JOYSTICK_PROFILE_VERSION) {
+		if (version > JOYSTICK_PROFILE_VERSION) {
 			fclose(fileCache);
 			Debug_Info_Error("JOYSTICK::Profile_Load(), version mismatch, version:%d", version);
 			return FALSE;
@@ -688,9 +695,13 @@ BOOL JOYSTICK::Profile_Load(const wchar_t* file_path) {
 			p_axis->Set_Axis_Reversed(i_data);
 
 			fread(&i_data, sizeof(i_data), 1, fileCache);
+			if (i_data < 0 || i_data > WC4_ACTIONS_MAX)//insure i_data is within WC4_ACTIONS boundaries, set to "None" is not.
+				i_data = 0;
 			p_axis->Set_Button_Action_Min(static_cast<WC4_ACTIONS>(i_data));
 
 			fread(&i_data, sizeof(i_data), 1, fileCache);
+			if (i_data < 0 || i_data > WC4_ACTIONS_MAX)//insure i_data is within WC4_ACTIONS boundaries, set to "None" is not.
+				i_data = 0;
 			p_axis->Set_Button_Action_Max(static_cast<WC4_ACTIONS>(i_data));
 		}
 
@@ -708,6 +719,8 @@ BOOL JOYSTICK::Profile_Load(const wchar_t* file_path) {
 				return FALSE;
 			}
 			fread(&i_data, sizeof(i_data), 1, fileCache);
+			if (i_data < 0 || i_data > WC4_ACTIONS_MAX)//insure i_data is within WC4_ACTIONS boundaries, set to "None" is not.
+				i_data = 0;
 			p_key->Set_Action(static_cast<WC4_ACTIONS>(i_data));
 		}
 
@@ -729,6 +742,8 @@ BOOL JOYSTICK::Profile_Load(const wchar_t* file_path) {
 			fread(&num_positions, sizeof(num_positions), 1, fileCache);
 			for (int i = 0; i < num_positions; i++) {
 				fread(&i_data, sizeof(i_data), 1, fileCache);
+				if (i_data < 0 || i_data > WC4_ACTIONS_MAX)//insure i_data is within WC4_ACTIONS boundaries, set to "None" is not.
+					i_data = 0;
 				p_switch->Set_Action(i, static_cast<WC4_ACTIONS>(i_data));
 			}
 		}

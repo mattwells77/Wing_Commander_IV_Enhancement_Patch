@@ -111,6 +111,9 @@
 #define IDS_NO_CONTROLLERS_DETECTED     194
 #define IDS_FILE_ALREADY_EXISTS         195
 #define IDS_OVERWRITE                   196
+#define IDS_ACTION063                   197
+#define IDS_ACTION064                   198
+#define IDS_ACTION065                   199
 #define IDC_BUTTON_YAW                  1000
 #define IDC_LIST_BUTTONS                1002
 #define IDC_LIST_ACTIONS                1002
