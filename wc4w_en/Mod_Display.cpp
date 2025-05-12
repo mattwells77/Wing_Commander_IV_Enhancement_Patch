@@ -1357,6 +1357,9 @@ static void __declspec(naked) winproc_movie_message_check(void) {
 //__________________________________________________
 static void Start_Display_Setup(BOOL no_full_screen) {
     
+    if(ConfigReadInt(L"MAIN", L"ENABLE_CONTROLLER_ENHANCEMENTS", CONFIG_MAIN_ENABLE_CONTROLLER_ENHANCEMENTS))
+        Modifications_Joystick();
+
     if (no_full_screen)
         *p_wc4_is_windowed = TRUE;
     else
