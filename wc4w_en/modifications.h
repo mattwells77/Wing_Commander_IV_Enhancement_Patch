@@ -28,3 +28,7 @@ void Modifications_Joystick();
 
 
 void Set_WindowActive_State(BOOL isActive);
+
+#ifndef VERSION_WC4_DVD
+void Music_Class_Destructor();
+#endif

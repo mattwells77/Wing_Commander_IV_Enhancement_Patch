@@ -26,7 +26,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
 char* p_wc4_szAppName = nullptr;
-HINSTANCE* pp_hinstWC3W = nullptr;
+HINSTANCE* pp_hinstWC4W = nullptr;
 
 BOOL* p_wc4_window_has_focus = nullptr;
 BOOL* p_wc4_is_windowed = nullptr;
@@ -112,7 +112,7 @@ DRAW_BUFFER* p_wc4_inflight_draw_buff = nullptr;
 
 char** p_wc4_movie_branch_subtitle = nullptr;
 BYTE** p_wc4_text_choice_draw_buff = nullptr;
-BYTE* p_wc4_text_choice_lang_flag = nullptr;
+BYTE* p_wc4_movie_colour_bit_level = nullptr;
 //return address when playing HR movies to skip over regular movie playback.
 void* p_wc4_play_inflight_hr_movie_return_address = nullptr;
 
@@ -192,6 +192,190 @@ void(*wc4_draw_movie_frame)() = nullptr;
 
 
 void(*wc4_draw_text_to_buff)(DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, DWORD unk2) = nullptr;
+
+
+#ifdef VERSION_WC4_DVD
+//_______________
+void WC4W_Setup() {
+
+    p_wc4_window_has_focus = (BOOL*)0x4B7784;
+
+    p_wc4_is_windowed = (BOOL*)0x4B720C;
+
+    p_wc4_hWinMain = (HWND*)0x4D20B4;
+
+    p_wc4_szAppName = (char*)0x4B9F40;
+
+    pp_hinstWC4W = (HINSTANCE*)0x4CD6BC;
+
+    p_wc4_main_surface_pitch = (LONG*)0x4B1DC4;
+
+    pp_wc4_DIB_Bitmapinfo = (BITMAPINFO**)0x4C5050;
+    pp_wc4_DIB_vBits = (VOID**)0x4C5058;
+
+    pp_wc4_db_game = (DRAW_BUFFER**)0x4C5078;
+    pp_wc4_db_game_main = (DRAW_BUFFER_MAIN**)0x4C5074;
+
+    p_wc4_main_pal = (BYTE*)0x4C4D50;
+    //p_wc4_x_centre_cockpit = (LONG*)0x4A2D28;
+    //p_wc4_y_centre_cockpit = (LONG*)0x4A2D2C;
+    //p_wc4_x_centre_rear = (LONG*)0x4A2D48;
+    //p_wc4_y_centre_rear = (LONG*)0x4A2D4C;
+    //p_wc4_x_centre_hud = (LONG*)0x4A2D38;
+    //p_wc4_y_centre_hud = (LONG*)0x4A2D3C;
+
+    p_wc4_space_view_type = (SPACE_VIEW_TYPE*)0x4BB820;
+
+    //p_wc4_client_width = (DWORD*)0x4D40FC;
+    //p_wc4_client_height = (DWORD*)0x4D4100;
+
+    p_wc4_is_mouse_present = (BOOL*)0x4CD6AC;
+
+    p_wc4_mouse_button = (WORD*)0x4CD6B0;
+    p_wc4_mouse_x = (WORD*)0x4CD6B2;
+    p_wc4_mouse_y = (WORD*)0x4CD6B4;
+
+    p_wc4_mouse_button_space = (WORD*)0x4C41A8;
+    p_wc4_mouse_x_space = (WORD*)0x4C41AA;
+    p_wc4_mouse_y_space = (WORD*)0x4C41AC;
+
+    p_wc4_mouse_centre_x = (LONG*)0x4C4184;
+    p_wc4_mouse_centre_y = (LONG*)0x4C4194;
+
+    p_wc4_joy_dead_zone = (LONG*)0x4B7780;
+
+    p_wc4_joy_buttons = (DWORD*)0x4CD1E8;
+
+    p_wc4_joy_move_x = (LONG*)0x4CD1FC;
+    p_wc4_joy_move_y = (LONG*)0x4CD1EC;
+    p_wc4_joy_move_r = (LONG*)0x4CD3E8;
+
+    p_wc4_joy_move_x_256 = (LONG*)0x4CD3A0;
+    p_wc4_joy_move_y_256 = (LONG*)0x4CD200;
+
+
+    p_wc4_joy_x = (LONG*)0x4CD1A0;
+    p_wc4_joy_y = (LONG*)0x4CD3A4;
+
+    p_wc4_joy_throttle_pos = (LONG*)0x4B777C;
+    p_wc4_joy_pov = (DWORD*)0x4B7778;
+
+    pp_wc4_music_thread_class = (void**)0x4C269C;
+    wc4_music_thread_class_destructor = (void(__thiscall*)(void*))0x444450;
+
+    wc4_dealocate_mem01 = (void(*)(void*))0x48C9E0;
+
+    ///    wc4_unknown_func01 = (void(*)())0x4082C0;
+
+    wc4_update_input_states = (void(*)())0x46F500;
+
+    p_wc4_key_pressed_scancode = (BYTE*)0x4CD69C;
+
+
+    wc4_translate_messages = (BYTE(*)(BOOL, BOOL))0x489260;
+
+    wc4_translate_messages_keys = (void(*)())0x4890D0;
+
+    wc4_message_check_node_add = (BOOL(*)(BOOL(*pFUNC)(HWND, UINT, WPARAM, LPARAM)))0x489340;
+    wc4_message_check_node_remove = (BOOL(*)(BOOL(*pFUNC)(HWND, UINT, WPARAM, LPARAM)))0x489380;
+
+    wc4_movie_messages = (BOOL(*)(HWND, UINT, WPARAM, LPARAM))0x47B320;
+
+    wc4_conversation_decision_loop = (void(*)())0x49DC50;
+
+    wc4_handle_movie = (void(*)(BOOL))0x443A60;
+
+    ///wc4_sig_movie_play_sequence = (BOOL(__thiscall*)(void*, DWORD))0x4DE4E0;
+
+    wc4_movie_update_joystick_double_click_exit = (void(*)())0x47A9E0;
+    wc4_movie_exit = (BOOL(*)())0x47AA80;
+
+    wc4_play_movie = (LONG(*)(const char*, LONG, LONG, LONG, LONG, LONG, LONG))0x47ACD0;
+
+    ///    wc4_movie_set_position = (BOOL(__thiscall*)(void*, LONG))0x41EEF0;
+
+    ///    p_wc4_movie_criticalsection = (CRITICAL_SECTION*)0x4A9A80;
+    p_wc4_movie_class = (void*)0x4CB9E0;
+    ///    wc4_movie_update_positon = (void(__thiscall*)(void*))0x41BDB0;
+
+
+    p_wc4_movie_branch_list = (LONG*)0x4BC7E8;
+    p_wc4_movie_branch_current_list_num = (LONG*)0x4CB9E4;
+    //p_wc4_movie_choice_text_list = (LONG*)0x4C7048;
+
+
+    p_wc4_subtitles_enabled = (LONG*)0x4BC86C;
+    p_wc4_language_ref = (LONG*)0x4C41F4;
+
+
+    p_wc4_key_scancode = (DWORD*)0x4C4188;
+
+    p_wc4_movie_halt_flag = (bool*)0x4CB9D8;
+
+
+    wc4_draw_choice_text_buff = (void(*)(void*, BYTE*, DWORD))0x469110;
+
+
+    wc4_draw_hud_targeting_elements = (void(__thiscall*)(void*))0x46B020;
+
+    wc4_draw_hud_view_text = (void(__thiscall*)(void*))0x44ADE0;
+
+    wc4_nav_screen = (void(__thiscall*)(void*))0x445340;
+
+    wc4_nav_screen_update_position = (void(__thiscall*)(void*))0x444900;
+
+    wc4_load_file_handle = (BOOL(__thiscall*)(void*, BOOL, BOOL))0x489730;
+    wc4_find_file_in_tre = (LONG(*)(char*))0x48B950;
+
+    p_wc4_frequency = (LARGE_INTEGER*)0x4C4938;
+    p_wc4_space_time_max = (LARGE_INTEGER*)0x4C4D48;
+    p_wc4_space_time_min = (LARGE_INTEGER*)0x4C4D40;
+    p_wc4_space_time_current = (LARGE_INTEGER*)0x4B72A0;
+    p_wc4_space_time4 = (LARGE_INTEGER*)0x4C5264;
+    p_wc4_movie_click_time = (LARGE_INTEGER*)0x4CB9A0;
+
+    p_movie_class_inflight_02 = (XAN_CLASS_INFLIGHT_02**)0x4BB9C8;
+    pp_movie_class_inflight_01 = (MOVIE_CLASS_INFLIGHT_01**)0x4BD448;
+
+    wc4_copy_rect = (void (*)(DRAW_BUFFER_MAIN*, LONG, LONG, DRAW_BUFFER_MAIN*, LONG, LONG, DWORD)) 0x48F64F;
+    wc4_play_audio_01 = (LONG(__thiscall*)(void*, DWORD, DWORD, DWORD, DWORD))0x45E6D0;
+    wc4_set_music_volume = (void(__thiscall*)(void*, LONG))0x45EA70;
+
+    p_wc4_ambient_music_volume = (LONG*)0x4BD220;
+    p_wc4_is_sound_enabled = (BYTE*)0x4C2684;
+    p_wc4_audio_class = (void*)0x4C4204;
+
+    p_wc4_inflight_audio_ref = (DWORD*)0x4BD444;
+    p_wc4_inflight_audio_unk01 = (BYTE*)0x4B47DC;
+    pp_wc4_inflight_audio_ship_ptr_for_rect_colour = (void**)0x4BD440;
+
+    p_wc4_play_inflight_hr_movie_return_address = (void*)0x40D158;
+
+    p_wc4_inflight_draw_buff_main = (DRAW_BUFFER_MAIN*)0x4BB870;
+    p_wc4_inflight_draw_buff = (DRAW_BUFFER*)0x4BB910;
+
+    wc4_allocate_mem_main = (void* (*)(DWORD))0x49E6DB;
+    wc4_deallocate_mem_main = (void(*)(void*))0x49E862;
+
+    p_wc4_xanlib_drawframeXD = (BOOL(**)(VIDframe*, BYTE*, UINT, DWORD))0x4D45E4;
+    p_wc4_xanlib_play = (BOOL(__thiscall**)(void*, LONG))0x4D461C;
+
+
+    p_wc4_movie_branch_subtitle = (char**)0x4BC730;
+    p_wc4_text_choice_draw_buff = (BYTE**)0x4CB9D0;
+
+    p_wc4_movie_colour_bit_level = (BYTE*)0x4CB9C4;
+
+    wc4_draw_movie_frame = (void(*)())0x47B600;
+
+    wc4_draw_text_to_buff = (void(*)(DRAW_BUFFER*, DWORD, DWORD, DWORD, char*, DWORD)) 0x4913A9;
+
+    p_wc4_movie_no_interlace = (DWORD*)0x4C43F0;
+
+    p_wc4_mouse_struct = (void*)0x4D207C;
+}
+
+#else
 //_______________
 void WC4W_Setup() {
 
@@ -203,7 +387,7 @@ void WC4W_Setup() {
 
     p_wc4_szAppName = (char*)0x4DB6F8;
 
-    pp_hinstWC3W = (HINSTANCE*)0x4DBAD4;
+    pp_hinstWC4W = (HINSTANCE*)0x4DBAD4;
 
     p_wc4_main_surface_pitch = (LONG*)0x4D9834;
 
@@ -360,7 +544,7 @@ void WC4W_Setup() {
 
     p_wc4_movie_branch_subtitle = (char**)0x4C7048;
     p_wc4_text_choice_draw_buff = (BYTE**)0x4D94B8;
-    p_wc4_text_choice_lang_flag = (BYTE*)0x4D94A8;
+    p_wc4_movie_colour_bit_level = (BYTE*)0x4D94A8;
 
     wc4_draw_movie_frame = (void(*)())0x4830D0;
 
@@ -370,3 +554,4 @@ void WC4W_Setup() {
 
     p_wc4_mouse_struct = (void*)0x4CE848;
 }
+#endif

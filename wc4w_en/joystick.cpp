@@ -1182,8 +1182,58 @@ static void __declspec(naked) print_scancode(void) {
 }
 */
 
+
+#ifdef VERSION_WC4_DVD
 //___________________________
 void Modifications_Joystick() {
+
+	MemWrite8(0x46F120, 0x8B, 0xE9);
+	FuncWrite32(0x46F121, 0x53042444, (DWORD)&joy_setup);
+
+	MemWrite8(0x488AE0, 0xA0, 0xE9);
+	FuncWrite32(0x488AE1, 0x4B7774, (DWORD)&joy_update_main);
+
+	MemWrite16(0x488BD0, 0xEC83, 0xE990);
+	FuncWrite32(0x488BD2, 0x24448D34, (DWORD)&joy_update_buttons);
+	MemWrite8(0x488BD6, 0x00, 0x90);
+
+	//Update_Joystick_Movement function. Calls to this function are not needed, joystick movement is updated in "joy_update_main".
+	MemWrite16(0x488DD0, 0x0D8B, 0xC390);
+	MemWrite32(0x488DD2, 0x4CD1B0, 0x90909090);
+
+	// get throttle value fixes-------------
+	//skip over JOYCAPS.wCaps & JOYCAPS_HASZ
+	MemWrite16(0x44B28A, 0x05F6, 0x07EB);
+
+	//skip over JOYCAPS.wZmax - JOYCAPS.wZmin and other maniputations
+	MemWrite16(0x44B29D, 0x0D8B, 0x27EB);
+	//--------------------------------------
+	
+
+	//make the roll axis variable -------------
+	// 
+	//skip over sign check and move the roll axis value into the player movement structure
+	MemWrite16(0x44BCCE, 0xC53B, 0x9090);
+	MemWrite16(0x44BCD0, 0x177D, 0x9090);
+
+	MemWrite8(0x44BCDC, 0xB8, 0x90);
+	MemWrite32(0x44BCDD, 0xFFFFFF00, 0x90909090);
+
+	//jmp this bit
+	MemWrite8(0x44BD0A, 0x7E, 0xEB);
+	//----------------------------------------
+	
+	//print scancodes
+	//MemWrite16(0x4ADD0E, 0x918A, 0xE890);///////
+	//FuncWrite32(0x4ADD10, 0x4CE7C0, (DWORD)&print_scancode);//////////
+}
+
+#else
+//___________________________
+void Modifications_Joystick() {
+
+	//0046F120 / $  8B4424 04                MOV EAX, DWORD PTR SS : [ARG.1] ; wc4dvd.void SETUP_JOYSTICK ? ? ? (INT flag)(guessed Arg1)
+	//0046F124 | .  53                       PUSH EBX
 
 	MemWrite8(0x412E50, 0x8B, 0xE9);
 	FuncWrite32(0x412E51, 0x53042444, (DWORD)&joy_setup);
@@ -1193,7 +1243,7 @@ void Modifications_Joystick() {
 
 	MemWrite8(0x4AD8B0, 0x83, 0xE9);
 	FuncWrite32(0x4AD8B1, 0x05C634EC, (DWORD)&joy_update_buttons);
-	
+
 	//Update_Joystick_Movement function. Calls to this function are not needed, joystick movement is updated in "joy_update_main".
 	MemWrite8(0x4ADB00, 0x56, 0xC3);
 
@@ -1208,7 +1258,7 @@ void Modifications_Joystick() {
 	//skip over other maniputations
 	MemWrite16(0x4482F2, 0xC22B, 0x0DEB);
 	//--------------------------------------
-	
+
 
 	//make the roll axis variable -------------
 	// 
@@ -1222,8 +1272,9 @@ void Modifications_Joystick() {
 	//jmp this bit
 	MemWrite8(0x448D07, 0x7E, 0xEB);
 	//----------------------------------------
-	
+
 	//print scancodes
 	//MemWrite16(0x4ADD0E, 0x918A, 0xE890);///////
 	//FuncWrite32(0x4ADD10, 0x4CE7C0, (DWORD)&print_scancode);//////////
 }
+#endif

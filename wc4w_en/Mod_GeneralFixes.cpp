@@ -56,15 +56,17 @@ static BOOL Load_Data_File(char* pfile_name) {
 static void __declspec(naked) load_data_file(void) {
 
     __asm {
-        mov ebx, [esp + 0x4]//pointer to file name in file_class
+        mov eax, [esp + 0x4]//pointer to file name in file_class
 
         push ebp
         push esi
-
         push ebx
+
+        push eax
         call Load_Data_File
         add esp, 0x4
 
+        pop ebx
         pop esi
         pop ebp
 
@@ -100,23 +102,12 @@ static void __declspec(naked) close_file_handle(void) {
 */
 
 //Fixed a code error on a call to the "VirtualProtect" function, where the "lpflOldProtect" parameter was set to NULL when it should point to a place to store the previous access protection value.
-//______________________________
-static void VirtualProtect_Fix() {
+//___________________________________________________________________________________________________________________
+static BOOL __stdcall VirtualProtect_Fix(LPVOID lpAddress, SIZE_T dwSize, DWORD  flNewProtect, PDWORD lpflOldProtect) {
     DWORD oldProtect;
-    VirtualProtect((LPVOID)0x48D864, 0x494F92 - 0x48D864, PAGE_EXECUTE_READWRITE, &oldProtect);
+    return VirtualProtect(lpAddress, dwSize, flNewProtect, &oldProtect);
 }
-
-
-//____________________________________________________
-static void __declspec(naked) virtualprotect_fix(void) {
-
-    __asm {
-        pushad
-        call VirtualProtect_Fix
-        popad
-        ret
-    }
-}
+void* p_virtualprotect_fix = &VirtualProtect_Fix;
 
 
 //_____________________________________________________________
@@ -318,7 +309,47 @@ static void __declspec(naked) build_save_names_file(void) {
     }
 }
 
+#ifndef VERSION_WC4_DVD
+//___________________________
+void Music_Class_Destructor() {
+    //This seems to be missing from the wc4 win95 executable destructor function.
+    if (*pp_wc4_music_thread_class) {
+        //Debug_Info("Music_Class_Destructor Destructing");
+        wc4_music_thread_class_destructor(*pp_wc4_music_thread_class);
+        wc4_dealocate_mem01(*pp_wc4_music_thread_class);
+        
+    }
+    *pp_wc4_music_thread_class = nullptr;
+    Debug_Info("Music_Class_Destructor Done");
+}
+#endif
 
+
+#ifdef VERSION_WC4_DVD
+//_______________________________
+void Modifications_GeneralFixes() {
+
+    //Load files in place of files located in .tre archives.
+    FuncReplace32(0x4897B3, 0x2199, (DWORD)&load_data_file);
+
+    //Fixed a code error on a call to the "VirtualProtect" function, where the "lpflOldProtect" parameter was set to NULL when it should point to a place to store the previous access protection value.
+    MemWrite32(0x4773E9, 0x4D44D0, (DWORD)&p_virtualprotect_fix);
+    
+
+    //-----------------------UAC-Patch---------------------------
+    //Alter the save location of files to the RoamingAppData folder. To allow the game to work without admin privileges when installed under ProgramFiles and to seperate game data between different Windows users.
+    MemWrite32(0x48BE67, 0x4D4500, (DWORD)&p_get_file_attributes_uac);
+
+    MemWrite32(0x48BF2E, 0x4D43FC, (DWORD)&p_create_file_uac);
+
+    MemWrite32(0x4AC167, 0x4D4414, (DWORD)&p_delete_file_uac);
+ 
+    MemWrite16(0x4529D0, 0xEC81, 0xE990);
+    FuncWrite32(0x4529D2, 0x0400, (DWORD)&build_save_names_file);
+    //------------------------------------------------------------
+}
+
+#else
 //_______________________________
 void Modifications_GeneralFixes() {
 
@@ -328,8 +359,7 @@ void Modifications_GeneralFixes() {
     //FuncReplace32(0x49ABE9, 0x0F82, (DWORD)&close_file_handle);
 
     //Fixed a code error on a call to the "VirtualProtect" function, where the "lpflOldProtect" parameter was set to NULL when it should point to a place to store the previous access protection value.
-    FuncReplace32(0x410B29, 0xFFFFFC93, (DWORD)&virtualprotect_fix);
-
+    MemWrite32(0x4107D7, 0x4DE36C, (DWORD)&p_virtualprotect_fix);
 
     //-----------------------UAC-Patch---------------------------
     //Alter the save location of files to the RoamingAppData folder. To allow the game to work without admin privileges when installed under ProgramFiles and to seperate game data between different Windows users.
@@ -350,3 +380,4 @@ void Modifications_GeneralFixes() {
     MemWrite16(0x475726, 0x0000, 0x9090);
     MemWrite32(0x475728, 0x00000000, 0x90909090);
 }
+#endif

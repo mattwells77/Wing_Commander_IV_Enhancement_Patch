@@ -198,6 +198,9 @@ static bool Display_Exit() {
         delete pMovie_vlc_Inflight;
     pMovie_vlc_Inflight = nullptr;
 
+#ifndef VERSION_WC4_DVD
+    Music_Class_Destructor();
+#endif
     Display_Dx_Destroy();
     return 0;
 }
@@ -573,7 +576,7 @@ static void __fastcall Set_Space_View_POV3(void* p_space_class, DRAW_BUFFER_MAIN
     p_view_vars[6] = width / 2;
     p_view_vars[7] = height / 2;
 
-    
+
     //Debug_Info("Set_Space_View_POV3 - %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d", p_view_vars[0], p_view_vars[1], p_view_vars[2], p_view_vars[3], p_view_vars[4], p_view_vars[5], p_view_vars[6], p_view_vars[7],
     //    p_view_vars[8], p_view_vars[9], p_view_vars[10], p_view_vars[11], p_view_vars[12], p_view_vars[13], p_view_vars[14], p_view_vars[15]);
 }
@@ -673,11 +676,22 @@ static void __declspec(naked) lock_3dspace_surface_pov1(void) {
         //push edx
         push ebx
         push esi
+        
+#ifdef VERSION_WC4_DVD
+        push edi
+        push ebp
 
+        push edi
+#else
         push ebx
+#endif
         call Lock_3DSpace_Surface_POV1
         add esp, 0x4
 
+#ifdef VERSION_WC4_DVD
+        pop ebp
+        pop edi
+#endif
         pop esi
         pop ebx
         //pop edx
@@ -708,7 +722,11 @@ static void __declspec(naked) lock_3dspace_surface_pov3(void) {
         push esi
         push edi
 
+#ifdef VERSION_WC4_DVD
+        push esi
+#else
         push edi
+#endif
         call Lock_3DSpace_Surface_POV3
         add esp, 0x4
 
@@ -901,11 +919,21 @@ static void Fix_CockpitViewTargetRect() {
 static void __declspec(naked) fix_cockpit_view_target_rect(void) {
 
     __asm {
+        push ebx
+        push edi
         push esi
         call Fix_CockpitViewTargetRect
         pop esi
+        pop edi
+        pop ebx
+        
+#ifdef VERSION_WC4_DVD
+        mov eax, pp_wc4_db_game_main
+        mov eax, dword ptr ds : [eax]
+#else
         mov ecx, pp_wc4_db_game_main
         mov ecx, dword ptr ds : [ecx]
+#endif
         ret
     }
 }
@@ -987,9 +1015,14 @@ static void __declspec(naked) nav_unlock_3d_and_lock_2d_drawing(void) {
         pop edx
         pop eax
 
+#ifdef VERSION_WC4_DVD
+        lea eax, [edx + edi]
+        add ecx, ebx
+#else
         add ecx, edi
         dec edi
         add ecx, ebp
+#endif
 
         ret
     }
@@ -1312,6 +1345,49 @@ static BOOL WinProc_Main(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 }
 
 
+#ifdef VERSION_WC4_DVD
+//Add  WM_ENTERSIZEMOVE and WM_EXITSIZEMOVE checks to movie message check
+//_____________________________________________________________
+static void __declspec(naked) winproc_movie_message_check(void) {
+
+    __asm {
+        add ecx, 0x111
+        cmp ecx, WM_COMMAND
+        jne check2
+        mov dl, 0
+        ret
+        check2 :
+        cmp ecx, WM_INITMENU
+            jne check3
+            mov dl, 1
+            ret
+            check3 :
+        cmp ecx, WM_LBUTTONDBLCLK
+            jne check4
+            mov dl, 2
+            ret
+            check4 :
+        cmp ecx, WM_RBUTTONDBLCLK
+            jne check5
+            mov dl, 3
+            ret
+            check5 :
+        cmp ecx, WM_ENTERSIZEMOVE
+            jne check6
+            mov dl, 1
+            ret
+            check6 :
+        cmp ecx, WM_EXITSIZEMOVE
+            jne end_check
+            mov dl, 1
+            ret
+            end_check :
+        mov dl, 4
+            ret
+    }
+}
+
+#else
 //Add  WM_ENTERSIZEMOVE and WM_EXITSIZEMOVE checks to movie message check
 //_____________________________________________________________
 static void __declspec(naked) winproc_movie_message_check(void) {
@@ -1352,11 +1428,12 @@ static void __declspec(naked) winproc_movie_message_check(void) {
             ret
     }
 }
+#endif
 
 
 //__________________________________________________
 static void Start_Display_Setup(BOOL no_full_screen) {
-    
+
     if(ConfigReadInt(L"MAIN", L"ENABLE_CONTROLLER_ENHANCEMENTS", CONFIG_MAIN_ENABLE_CONTROLLER_ENHANCEMENTS))
         Modifications_Joystick();
 
@@ -1626,39 +1703,27 @@ static void __declspec(naked) nav_screen_movement_speed_fix(void) {
 }
 
 
-//________________________________________________________
-static void __declspec(naked) fix_movement_diamond_x(void) {
-
-    __asm {
-        mov esi, clientWidth
-        ret
-    }
-}
-
-
-//________________________________________________________
-static void __declspec(naked) fix_movement_diamond_y(void) {
-
-    __asm {
-        mov esi, clientHeight
-        ret
-    }
-}
-
-
 //____________________________________________________
 static void __declspec(naked) update_space_mouse(void) {
 
     __asm {
         mov eax, p_mouse_button_true
         mov edx, p_wc4_mouse_button_space
+        mov ecx, dword ptr ds: [eax]
+        mov dword ptr ds: [edx], ecx
+        mov cx, word ptr ds: [eax+4]
+        mov word ptr ds : [edx+4] , cx
+
+#ifndef VERSION_WC4_DVD
+        add esp, 0x8
+#endif
         ret
     }
 }
 
 
 //_______________________________________________________________________________
-static void Palette_Update_Main(BYTE* p_pal_buff, WORD offset, DWORD num_entries) {
+static void Palette_Update_Main(BYTE* p_pal_buff, BYTE offset, DWORD num_entries) {
     int main_offset = (int)offset * 3;
     if ((LONG)num_entries > 0) {
         for (int i = 0; i < (int)num_entries * 3; i += 3) {
@@ -1804,11 +1869,14 @@ static void __declspec(naked) play_hd_movie_sequence_main(void) {
         ret
 
         hd_movie_error:
+
+#ifndef VERSION_WC4_DVD
         // hd movie had errors, return to wc4 play_movie function to play regular movie.
         //lea ecx, [esp+0x90]
         pop ecx  //store ret address for this function
         sub esp, 0x154//start prologue code for return to regular movie play back function.
         push ecx //re-insert address for this function
+#endif
         ret
     }
 }
@@ -1876,7 +1944,7 @@ static BOOL Play_HD_Movie_Sequence_Secondary(void* p_wc4_movie_class, void* p_si
 }
 
 
-//_______________________________________________________________
+//__________________________________________________________________
 static void __declspec(naked) play_hd_movie_sequence_secondary(void) {
 
     __asm {
@@ -1899,7 +1967,7 @@ void* p_play_hd_movie_sequence_secondary = &play_hd_movie_sequence_secondary;
 
 //Finds the number of frames between two SMPTE timecode's, these timecodes are 30 fps.
 //SMPTE timecode format hh/mm/ss/frames 30fps
-//________________________________________________________________________________________
+//__________________________________________________________________________________________
 static LONG Get_Num_Frames_Between_Timecodes_30fps(DWORD timecode_start, DWORD timecode_end) {
 
     DWORD temp = 0;
@@ -2185,7 +2253,7 @@ static void __declspec(naked) inflight_movie_audio_check(void) {
         pop ecx
         pop ebx
 
-        cmp al, 0
+        cmp eax, 0
 
         pop eax
         ret
@@ -2194,11 +2262,14 @@ static void __declspec(naked) inflight_movie_audio_check(void) {
 }
 
 
-//________________________________________________________
-static void Fix_Space_Mouse_Movement(LONG* p_x, LONG* p_y) {
+//__________________________________________________________________________________________
+static void Fix_Space_Mouse_Movement(void* p_ship_class, LONG* p_x_roll, LONG* p_y_throttle) {
     // Maximum turn speed was being defined by the screen resolution formally 640x480.
     // Higher resolutions were allowing for a greater mouse range and thus a higher turning speed than what was otherwise defined in game.
-    
+
+    LONG x = *p_wc4_mouse_x_space - *p_wc4_mouse_centre_x;
+    LONG y = *p_wc4_mouse_y_space - *p_wc4_mouse_centre_y;
+
     //fix mouse movement range between -16 and 16.
     LONG range = *p_wc4_mouse_centre_y;
     if (*p_wc4_mouse_centre_y > *p_wc4_mouse_centre_x)
@@ -2209,22 +2280,35 @@ static void Fix_Space_Mouse_Movement(LONG* p_x, LONG* p_y) {
 
     LONG range_block = range / 16;
 
-    *p_x /= range_block;
-    *p_y /= range_block;
+    x /= range_block;
+    y /= range_block;
 
-    if (*p_x > 16)
-        *p_x = 16;
-    else if (*p_x < -16)
-        *p_x = -16;
+    if (x > 16)
+        x = 16;
+    else if (x < -16)
+        x = -16;
 
-    if (*p_y > 16)
-        *p_y = 16;
-    else if (*p_y < -16)
-        *p_y = -16;
+    if (y > 16)
+        y = 16;
+    else if (y < -16)
+        y = -16;
+    
+#ifdef VERSION_WC4_DVD
+    *p_x_roll = x;
+#endif   
+
+    *p_y_throttle = y;
 
     //differs from wc3 here, multiply values by 16
-    *p_x *= 16;
-    *p_y *= 16;
+    x *= 16;
+    y *= 16;
+#ifndef VERSION_WC4_DVD
+    *p_x_roll = x;
+#endif  
+
+    LONG* p_position_class = ((LONG**)p_ship_class)[61];
+    p_position_class[4] = -x;
+    p_position_class[3] = -y;
 }
 
 
@@ -2233,31 +2317,315 @@ static void __declspec(naked) fix_space_mouse_movement(void) {
 
     __asm {
         push esi
-        push ebp
+        
+        sub esp, 0x8 //make room on the stack for roll and throttle value pointers.
 
-        push edi //y
-        push ecx //x
-
-        //set pointers to x and y vals on the stack
-        lea eax, dword ptr ss : [esp] //*p_x
-        lea edi, dword ptr ss : [esp + 0x4]//*p_y
-        push edi
+        //set pointers on the stack for returning mouse roll and throttle values.
+        lea ecx, dword ptr ss : [esp] //*p_x_roll
+        lea eax, dword ptr ss : [esp + 0x4]//*p_y_throttle
         push eax
+        push ecx
+        push esi
         call Fix_Space_Mouse_Movement
-        add esp, 0x8
+        add esp, 0xC
 
-        pop ecx //x
-        pop edx //y
-
-        pop ebp
+#ifdef VERSION_WC4_DVD
+        pop ebp //x for mouse roll
+        pop edx //y for mouse throttle
+        mov ecx, edx //y for mouse throttle when negative
+        neg ecx
+        xor ebx, ebx
+#else
+        pop ecx //x for mouse roll
+        pop eax //y for mouse throttle
+#endif
         pop esi
         ret
-
     }
 }
 
 
-//___________________________
+#ifdef VERSION_WC4_DVD
+//__________________________
+void Modifications_Display() {
+
+    MemWrite8(0x416B20, 0xA1, 0xE9);
+    FuncWrite32(0x416B21, 0x4BBD44, (DWORD)&Display_Exit);
+
+    MemWrite8(0x477400, 0x8B, 0xE9);
+    FuncWrite32(0x477401, 0x530C2444, (DWORD)&Palette_Update_Main);
+
+    MemWrite8(0x4763F0, 0xA1, 0xE9);
+    FuncWrite32(0x4763F1, 0x4B720C, (DWORD)&LockSurface);
+
+    MemWrite8(0x4764F0, 0xA1, 0xE9);
+    FuncWrite32(0x4764F1, 0x4B720C, (DWORD)&UnlockShowSurface);
+
+    //disable un-needed colour_fill function.
+    MemWrite16(0x417450, 0xEC83, 0xC033);//xor eax, eax
+    MemWrite8(0x417452, 0x64, 0xC3);
+
+    //replace 8bit clear_screen function.
+    MemWrite8(0x4775B0, 0xA1, 0xE9);
+    FuncWrite32(0x4775B1, 0x4B720C, (DWORD)&Clear_GUI_Surface);
+    //replace 16bit clear_screen function.
+    MemWrite8(0x477670, 0xA1, 0xE9);
+    FuncWrite32(0x477671, 0x4B720C, (DWORD)&Clear_GUI_Surface);
+
+    MemWrite16(0x47A7E0, 0xEC83, 0x9090);
+    MemWrite8(0x47A7E2, 0x6C, 0x90);
+    MemWrite8(0x47A7E3, 0xA1, 0xE9);
+    FuncWrite32(0x47A7E4, 0x4BBD50, (DWORD)&LockSurface);
+
+    MemWrite16(0x47A830, 0xEC81, 0xE990);
+    FuncWrite32(0x47A832, 0x84, (DWORD)&UnlockShowSurface);
+
+
+    //in draw movie func, jump over direct draw stuff
+    MemWrite8(0x47A4DC, 0x74, 0xEB);
+
+    //prevent direct draw - create surface func call
+    MemWrite16(0x417490, 0xEC83, 0xC033);//xor eax, eax
+    MemWrite8(0x417492, 0x6C, 0xC3);
+
+    //replace direct draw - blit func
+    MemWrite8(0x477770, 0xA1, 0xE9);
+    FuncWrite32(0x477771, 0x4B720C, (DWORD)&DXBlt);
+
+    //replace direct draw - blit 16bit func
+    MemWrite16(0x477970, 0xA151, 0xE990);
+    FuncWrite32(0x477972, 0x4CBAD8, (DWORD)&DXBlt);
+
+
+    //--Prevent 16 and 24 bit drawing routines from taking effect as this patch handles such things-----------------
+    //prevent direct draw - palette update func call
+    MemWrite8(0x417430, 0xA1, 0xC3);
+
+    //Prevent cmd line arg true colour mode from being enabled.
+    MemWrite16(0x46FA51, 0x1D89, 0xA390);//set to eax
+
+    //Force current video colour bit level to stay at 1(8 bit colour) in set game flags function.
+    MemWrite32(0x46AA3A, 0x02, 0x01);
+
+    //prevent movie and gameflow bit level being set to 16bit in settings menu.
+    //movie_video_colour_bit_level
+    //MemWrite32(0x45B62D, 0x02, 0x01);
+    //gameflow_video_colour_bit_level
+    //MemWrite32(0x45B6C8, 0x02, 0x01);
+    //--------------------------------------------------------------------------------------------------------------
+
+
+    //draw movie frame main
+    MemWrite32(0x47A6FE, 0x4D45E4, (DWORD)&p_DrawVideoFrame);
+    MemWrite32(0x47A7CD, 0x4D45E4, (DWORD)&p_DrawVideoFrame);
+    // draw movie frame
+    MemWrite32(0x47B63B, 0x4D45E4, (DWORD)&p_DrawVideoFrame);
+    MemWrite32(0x47B752, 0x4D45E4, (DWORD)&p_DrawVideoFrame);
+    MemWrite32(0x47B7FE, 0x4D45E4, (DWORD)&p_DrawVideoFrame);
+
+    //in draw movie func
+    FuncReplace32(0x47A552, 0xFFFFBF9A, (DWORD)&UnlockShowMovieSurface);
+    //in draw movie frame func
+    FuncReplace32(0x47B75A, 0xFFFFAD92, (DWORD)&UnlockShowMovieSurface);
+    FuncReplace32(0x47B806, 0xFFFFACE6, (DWORD)&UnlockShowMovieSurface);
+
+    //for drawing subtitles - dont know much about these
+    FuncReplace32(0x47C573, 0xFFFF9F79, (DWORD)&UnlockShowMovieSurface);
+    FuncReplace32(0x47C99F, 0xFFFF9B4D, (DWORD)&UnlockShowMovieSurface);
+    FuncReplace32(0x47CAAA, 0xFFFF9A42, (DWORD)&UnlockShowMovieSurface);
+
+    //replace blit function for movies
+    FuncReplace32(0x4591BB, 0x01E5B1, (DWORD)&DXBlt_Movie);
+    FuncReplace32(0x4591D3, 0x01E599, (DWORD)&DXBlt_Movie);
+    FuncReplace32(0x45950D, 0x01E25F, (DWORD)&DXBlt_Movie);
+    FuncReplace32(0x459525, 0x01E247, (DWORD)&DXBlt_Movie);
+
+    //replace blit function for draw choice text
+    FuncReplace32(0x459A62, 0x01DD0A, (DWORD)&DXBlt_Movie);
+    FuncReplace32(0x459A79, 0x01DCF3, (DWORD)&DXBlt_Movie);
+
+
+    //replace space first person view setup function
+    MemWrite8(0x409A10, 0x8B, 0xE9);
+    FuncWrite32(0x409A11, 0x56042444, (DWORD)&set_space_view_pov1);
+
+    //replace direct draw lock surface in draw space first person view function
+    MemWrite16(0x409BD2, 0x1D39, 0xE890);
+    FuncWrite32(0x409BD4, 0x4B7214, (DWORD)&lock_3dspace_surface_pov1);
+    MemWrite8(0x409BD8, 0x74, 0xEB);//jmp over ddraw stuff
+
+
+    //replace direct draw stuff in draw space first person view function - unlock 3d space surface then lock 2d surface for hud etc.
+    MemWrite16(0x409CCC, 0x840F, 0x9090);//prevent jumping before this is called
+    MemWrite32(0x409CCE, 0xFB, 0x90909090);
+
+    MemWrite16(0x409CD2, 0x1D39, 0xE890);
+    FuncWrite32(0x409CD4, 0x4BBD4C, (DWORD)&unlock_3dspace_surface_lock_2dspace_surface);
+    MemWrite16(0x409CD8, 0x840F, 0xE990);//jmp over ddraw stuff
+
+    //replace direct draw stuff in draw space first person view function - unlock 2d surface then display.
+    FuncReplace32(0x409E22, 0x06C6CA, (DWORD)&unlock_2dspace_surface_and_display);
+
+    //draw targeting elements to 3d space
+    FuncReplace32(0x40EB5E, 0x05C4BE, (DWORD)&draw_hud_targeting_elements);
+
+
+    MemWrite8(0x4067E4, 0xA1, 0xE8);
+    FuncWrite32(0x4067E5, 0x4B7214, (DWORD)&lock_3dspace_surface_pov3);
+    MemWrite16(0x4067E9, 0xC085, 0x9090);
+    MemWrite8(0x4067EB, 0x74, 0xEB);//jmp over ddraw stuff
+
+    //replace direct draw stuff in draw space third person view function - unlock 3d space surface then lock 2d surface for text etc.
+    FuncReplace32(0x4068D8, 0x044504, (DWORD)&unlock_3dspace_surface_lock_2dspace_surface_pov3);
+
+    //replace direct draw stuff in draw space third person view function - unlock 2d surface then display.
+    FuncReplace32(0x406901, 0x06FBEB, (DWORD)&unlock_2dspace_surface_and_display);
+
+    //replace space third person view setup function
+    MemWrite16(0x482260, 0x448B, 0xE990);
+    FuncWrite32(0x482262, 0x8B660424, (DWORD)&set_space_view_pov3);
+    MemWrite16(0x482266, 0x0C50, 0x9090);
+
+    //fix display rectangle for targeting elements
+    MemWrite8(0x46B0B8, 0xA1, 0xE8);
+    FuncWrite32(0x46B0B9, 0x4C5074, (DWORD)&fix_cockpit_view_target_rect);
+
+    //draw nav screen space view to 3d surface, seperate from 2d elements
+    FuncReplace32(0x44530F, 0x2D, (DWORD)&fix_nav_scrn_display);
+
+    //set 2d surface for drawing nav screen 2d elements
+    MemWrite8(0x445564, 0x8D, 0xE8);
+    FuncWrite32(0x445565, 0xCB031704, (DWORD)&nav_unlock_3d_and_lock_2d_drawing);
+
+    //set 3d surface after drawing nav screen 2d elements
+    MemWrite16(0x4457B4, 0x15FF, 0xE890);
+    FuncWrite32(0x4457B6, 0x4B7238, (DWORD)&nav_unlock_2d_and_display_relock_3d);
+
+
+    //Set space subtitle text background colour to 0. As original 255 coflicts with the mask colour being used to draw all cockpit/hud elements to a seperate surface.
+    MemWrite8(0x44AF4D, 0xFF, 0x00);
+
+    //disables setup window function.
+    MemWrite8(0x477C70, 0xA1, 0xC3);
+    //jmp over call to initialize window/dx in message box error function.
+    MemWrite8(0x4A1993, 0x75, 0xEB);
+
+    //start display setup passing "-no_full_screen" cmd line value.
+    MemWrite8(0x4769E0, 0x74, 0xEB);
+
+    MemWrite8(0x4769FB, 0x55, 0x90);
+    MemWrite16(0x4769FC, 0x15FF, 0xE890);
+    FuncWrite32(0x4769FE, 0x4D4548, (DWORD)&start_display_setup);
+
+
+    //replaces original function for mouse window client position with scaled gui position.
+    MemWrite8(0x489670, 0x8B, 0xE9);
+    FuncWrite32(0x489671, 0x05082444, (DWORD)&Update_Mouse_State);
+    MemWrite32(0x489675, 0xFFFFFE00, 0x90909090);
+
+    //replaces original function for mouse window client position with scaled gui position.
+    MemWrite8(0x4895A0, 0xA1, 0xE9);
+    FuncWrite32(0x4895A1, 0x4CD6AC, (DWORD)&Set_Mouse_Position);
+
+
+    //replace the main window message checking function for greater functionality.
+    MemWrite8(0x476B60, 0x8B, 0xE9);
+    FuncWrite32(0x476B61, 0x56082444, (DWORD)&WinProc_Main);
+
+    //Add  WM_ENTERSIZEMOVE and WM_EXITSIZEMOVE checks to movie message check
+    //increase range of message code selection
+    MemWrite32(0x47B3DB, 0xF5, 0x121);
+
+    //check for the messages
+    MemWrite16(0x47B3E7, 0x918A, 0xE890);
+    FuncWrite32(0x47B3E9, 0x47B500, (DWORD)&winproc_movie_message_check);
+
+    //prevent setting mouse centre x and y values to 320x240.
+    MemWrite16(0x46F59C, 0x05C7, 0x9090);
+    MemWrite32(0x46F59E, 0x4C4184, 0x90909090);
+    MemWrite32(0x46F5A2, 0x0140, 0x90909090);
+    MemWrite16(0x46F5A6, 0x05C7, 0x9090);
+    MemWrite32(0x46F5A8, 0x4C4194, 0x90909090);
+    MemWrite32(0x46F5AC, 0xF0, 0x90909090);
+
+    //replace set cursor function to allow cursor to freely leave window bounds when in gui mode
+    FuncReplace32(0x42B5A0, 0x0736CC, (DWORD)&Update_Cursor_Position);
+
+
+    //clip the cursor while a conversation decision is made.
+    FuncReplace32(0x49DD33, 0xFFFFFF19, (DWORD)&Conversation_Decision_ClipCursor);
+
+
+    //Enable cursor clipping for all WM_SETCURSOR messages within calls to this function, used during space flight.
+    FuncReplace32(0x46A991, 0x0004B6B, (DWORD)&overide_cursor_clipping);
+
+
+    //update the cursor position on "ALT+O" space settings screen.
+    FuncReplace32(0x49F068, 0xFFFEA534, (DWORD)&Update_Cursor_Position);
+
+
+    //relate the movement diamond to new space view dimensions rather than original 640x480.
+    MemWrite32(0x40AA9E, 0x4C41AC, 0x4CD6B4);
+    MemWrite32(0x40AACE, 0x4C41AA, 0x4CD6B2);
+
+    //update mouse in space view
+    MemWrite8(0x46F4E0, 0xE8, 0xE9);
+    FuncReplace32(0x46F4E1, 0x01A16B, (DWORD)&update_space_mouse);
+
+
+    //fix control reaction speed on the nav screen.
+    FuncReplace32(0x445478, 0xFFFFF484, (DWORD)&nav_screen_movement_speed_fix);
+
+    // Mouse turn speed fix--------------------------
+    MemWrite16(0x44BE82, 0x2D8B, 0xE890);
+    FuncWrite32(0x44BE84, 0x4C4184, (DWORD)&fix_space_mouse_movement);
+   
+    //jump over the remaining part of this section
+    MemWrite16(0x44BE88, 0xC933, 0x9090);
+    MemWrite8(0x44BE8A, 0x66, 0xE9);
+    MemWrite32(0x44BE8B, 0x41AA0D8B, 0x80);
+    MemWrite16(0x44BE8F, 0x004C, 0x9090);
+    //-----------------------------------------------
+
+    // HD Movies-----------------------------------------------
+    //skip is_vob_playback check
+    MemWrite16(0x459199, 0x1D39, 0x9090);
+    MemWrite32(0x45919B, 0x4B7490, 0x90909090);
+    MemWrite16(0x45919F, 0x850F, 0x9090);
+    MemWrite32(0x4591A1, 0xDB, 0x90909090);
+
+    //skip is_vob_playback check
+    MemWrite16(0x4594EB, 0x1D39, 0x9090);
+    MemWrite32(0x4594ED, 0x4B7490, 0x90909090);
+    MemWrite16(0x4594F1, 0x850F, 0x9090);
+    MemWrite32(0x4594F3, 0xAC, 0x90909090);
+
+    //skip is_vob_playback check
+    MemWrite16(0x459642, 0x840F, 0xE990);
+
+    //Replaces the Play_Movie function similar to the dvd version of WC4.
+    MemWrite8(0x47ACD0, 0xA1, 0xE8);
+    FuncWrite32(0x47ACD1, 0x4B7490, (DWORD)&play_hd_movie_sequence_main);
+    //skip vob_playback to allow original movie playback if hd movie playback fails.
+    MemWrite16(0x47ACDE, 0xC33B, 0x9090);
+    MemWrite8(0x47ACE0, 0x74, 0xEB);
+
+    //backup if the above fails. Here the original movie sequence will play if a HD movie fails.
+    MemWrite32(0x47B150, 0x4D461C, (DWORD)&p_play_hd_movie_sequence_secondary);
+
+    MemWrite8(0x40CE39, 0xA1, 0xE8);
+    FuncWrite32(0x40CE3A, 0x4BB9C8, (DWORD)&play_inflight_movie);
+
+    MemWrite8(0x40D1C0, 0xA1, 0xE8);
+    FuncWrite32(0x40D1C1, 0x4BB910, (DWORD)&inflight_movie_unload);
+
+    MemWrite16(0x44F09B, 0x3539, 0xE890);
+    FuncWrite32(0x44F09D, 0x4B47DC, (DWORD)&inflight_movie_audio_check);
+    //---------------------------------------------------------
+}
+
+#else
+//__________________________
 void Modifications_Display() {
 
     MemWrite16(0x4873F0, 0xA153, 0xE990);
@@ -2484,30 +2852,28 @@ void Modifications_Display() {
 
 
     //relate the movement diamond to new space view dimensions rather than original 640x480.
-    MemWrite8(0x423304, 0xBE, 0xE8);
-    FuncWrite32(0x423305, 0x280, (DWORD)&fix_movement_diamond_x);
-    MemWrite8(0x42331F, 0xBE, 0xE8);/////////
-    FuncWrite32(0x423320, 0x1E0, (DWORD)&fix_movement_diamond_y);
+    MemWrite32(0x423326, 0x4C0674, 0x4DC364);
+    MemWrite32(0x423300, 0x4C0672, 0x4DC362);
 
     //004213D5 | .E8 3A030500   CALL DRAW_IMAGE(*dib_struct, ) ? //draw crosshairs
     //MemWrite8(0x4213D5, 0xE8, 0x90);
     //MemWrite32(0x4213D6, 0x05033A, 0x90909090);
 
     //update mouse in space view
-    MemWrite8(0x4132DA, 0xBA, 0xE8);
-    FuncWrite32(0x4132DB, 0x4C0670, (DWORD)&update_space_mouse);
+    MemWrite8(0x4132C3, 0xE8, 0xE9);
+    FuncReplace32(0x4132C4, 0x09ADE8, (DWORD)&update_space_mouse);
 
     //fix control reaction speed on the nav screen.
     FuncReplace32(0x41AB7D, 0x17BF, (DWORD)&nav_screen_movement_speed_fix);
 
     // Mouse turn speed fix--------------------------
-    //"MOV EAX, ECX" to "JMP SHORT 00448FE5"
-    MemWrite16(0x448FC9, 0xC18B, 0x1AEB);
-    //"MOV EAX, EDI" to "JMP SHORT 00449013"
-    MemWrite16(0x448FF5, 0xC78B, 0x1CEB);
+    MemWrite8(0x448FBB, 0xA1, 0xE8);
+    FuncWrite32(0x448FBC, 0x4C0658, (DWORD)&fix_space_mouse_movement);
 
-    MemWrite8(0x449013, 0x8B, 0xE8);
-    FuncWrite32(0x449014, 0x04E2C1D0, (DWORD)&fix_space_mouse_movement);
+    //jump over the remaining part of this section
+    MemWrite16(0x448FC0, 0x8B66, 0x6EEB);
+    MemWrite32(0x448FC2, 0x4C06720D, 0x90909090);
+    MemWrite8(0x448FC6, 0x00, 0x90);
     //-----------------------------------------------
 
     // HD Movies-----------------------------------------------
@@ -2529,5 +2895,6 @@ void Modifications_Display() {
     MemWrite16(0x441B03, 0xC085, 0x9090);
     //---------------------------------------------------------
 }
+#endif
 
 

@@ -1,0 +1,1 @@
+copy %1 "D:\Games\Wing Commander IV - Play\dwrap.dll"

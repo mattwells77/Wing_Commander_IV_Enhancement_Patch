@@ -814,7 +814,7 @@ static INT_PTR CALLBACK DialogProc_SaveAsPreset(HWND hwndDlg, UINT uMsg, WPARAM 
 	switch (uMsg) {
 	case WM_INITDIALOG: {
 		////101 is the wcIII icon
-		SendMessage(hwndDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(*pp_hinstWC3W, MAKEINTRESOURCE(101)));
+		SendMessage(hwndDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(*pp_hinstWC4W, MAKEINTRESOURCE(101)));
 
 		HWND hwndParent = GetParent(hwndDlg);
 
@@ -1285,7 +1285,7 @@ static INT_PTR CALLBACK DialogProc_AxisCalibration(HWND hwndDlg, UINT uMsg, WPAR
 	switch (uMsg) {
 	case WM_INITDIALOG: {
 		////101 is the wcIII icon
-		SendMessage(hwndDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(*pp_hinstWC3W, MAKEINTRESOURCE(101)));
+		SendMessage(hwndDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(*pp_hinstWC4W, MAKEINTRESOURCE(101)));
 
 		HWND hwndParent = GetParent(hwndDlg);
 
@@ -1401,7 +1401,7 @@ static INT_PTR CALLBACK DialogProc_JoyConfig(HWND hwndDlg, UINT uMsg, WPARAM wPa
 	switch (uMsg) {
 	case WM_INITDIALOG: {
 		////101 is the wcIII icon
-		SendMessage(hwndDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(*pp_hinstWC3W, MAKEINTRESOURCE(101)));
+		SendMessage(hwndDlg, WM_SETICON, ICON_SMALL, (LPARAM)LoadIcon(*pp_hinstWC4W, MAKEINTRESOURCE(101)));
 		InitCommonControls();
 
 		hWin_JoyConfig = hwndDlg;

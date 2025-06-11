@@ -184,7 +184,7 @@ enum class SPACE_VIEW_TYPE : WORD {
 void WC4W_Setup();
 
 extern char* p_wc4_szAppName;
-extern HINSTANCE* pp_hinstWC3W;
+extern HINSTANCE* pp_hinstWC4W;
 
 extern BOOL* p_wc4_window_has_focus;
 extern BOOL* p_wc4_is_windowed;
@@ -280,7 +280,7 @@ extern DRAW_BUFFER* p_wc4_inflight_draw_buff;
 
 extern char** p_wc4_movie_branch_subtitle;
 extern BYTE** p_wc4_text_choice_draw_buff;
-extern BYTE* p_wc4_text_choice_lang_flag;
+extern BYTE* p_wc4_movie_colour_bit_level;
 
 //return address when playing HR movies to skip over regular movie playback.
 extern void* p_wc4_play_inflight_hr_movie_return_address;
