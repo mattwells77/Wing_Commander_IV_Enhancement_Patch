@@ -23,6 +23,7 @@ HD Movie playback is achieved using [libvlc](https://www.videolan.org/vlc/libvlc
 - Run the "WC4W.EXE" to play.
 
 #### GOG DVD version:
+- Before installing you may wish to backup the existing "dwrap.dll" in your GOG installation, as this patch will overwrite that file. 
 - Click on [Releases](https://github.com/mattwells77/Wing_Commander_IV_Enhancement_Patch/releases) and download the latest "wc4w_en_DVD_x.x.x.zip" where "x" is the version number and [libvlc_min_pack_3.0.21.zip](https://github.com/mattwells77/Wing_Commander_III_Enhancement_Patch/releases/tag/libvlc_min_pack_3.0.21) files. Extract the contents of these files to your Wing Commander 4 Install directory.
 - Run the "wc4dvd.exe" to play.
 
