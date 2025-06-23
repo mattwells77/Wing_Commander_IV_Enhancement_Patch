@@ -579,7 +579,7 @@ void LibVlc_Movie::SetMedia(std::string path) {
 #if LIBVLC_VERSION_INT >= LIBVLC_VERSION(4, 0, 0, 0)
     media = VLC::Media(path, VLC::Media::FromPath);
     //////////////libvlc subtitle autodetection path (bug) work-around////////////////////////////////////////////
-    //To-Do - Check for this issue in later versions.
+    //To-Do - Check for this issue in later versions. Current version = vlc-4.0.0-dev-win32-3db080cb
     //The current libvlc 4 nightly doesn't seem to scan the ".\subtitles" folders as the stable v3 does.
     //Needed to add the full path here, to get things working.
     std::string subs_path = "sub-autodetect-path=";
