@@ -8,14 +8,20 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
-		Release DVD version|x86 = Release DVD version|x86
+		Release DVD vlc-4.0.0-dev|x86 = Release DVD vlc-4.0.0-dev|x86
+		Release DVD|x86 = Release DVD|x86
+		Release vlc-4.0.0-dev|x86 = Release vlc-4.0.0-dev|x86
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{6F9A0521-59B1-4ADD-BA85-F9EC716B400B}.Debug|x86.ActiveCfg = Debug|Win32
 		{6F9A0521-59B1-4ADD-BA85-F9EC716B400B}.Debug|x86.Build.0 = Debug|Win32
-		{6F9A0521-59B1-4ADD-BA85-F9EC716B400B}.Release DVD version|x86.ActiveCfg = Release DVD version|Win32
-		{6F9A0521-59B1-4ADD-BA85-F9EC716B400B}.Release DVD version|x86.Build.0 = Release DVD version|Win32
+		{6F9A0521-59B1-4ADD-BA85-F9EC716B400B}.Release DVD vlc-4.0.0-dev|x86.ActiveCfg = Release DVD vlc-4.0.0-dev|Win32
+		{6F9A0521-59B1-4ADD-BA85-F9EC716B400B}.Release DVD vlc-4.0.0-dev|x86.Build.0 = Release DVD vlc-4.0.0-dev|Win32
+		{6F9A0521-59B1-4ADD-BA85-F9EC716B400B}.Release DVD|x86.ActiveCfg = Release DVD|Win32
+		{6F9A0521-59B1-4ADD-BA85-F9EC716B400B}.Release DVD|x86.Build.0 = Release DVD|Win32
+		{6F9A0521-59B1-4ADD-BA85-F9EC716B400B}.Release vlc-4.0.0-dev|x86.ActiveCfg = Release vlc-4.0.0-dev|Win32
+		{6F9A0521-59B1-4ADD-BA85-F9EC716B400B}.Release vlc-4.0.0-dev|x86.Build.0 = Release vlc-4.0.0-dev|Win32
 		{6F9A0521-59B1-4ADD-BA85-F9EC716B400B}.Release|x86.ActiveCfg = Release|Win32
 		{6F9A0521-59B1-4ADD-BA85-F9EC716B400B}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection

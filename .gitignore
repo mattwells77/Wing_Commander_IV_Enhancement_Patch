@@ -20,7 +20,9 @@ mono_crash.*
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
-[Rr]elease DVD version/
+[Rr]elease vlc-4.0.0-dev/
+[Rr]elease DVD/
+[Rr]elease DVD vlc-4.0.0-dev/
 [Rr]eleases/
 x64/
 x86/
