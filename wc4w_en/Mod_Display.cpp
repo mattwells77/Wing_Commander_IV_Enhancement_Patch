@@ -474,8 +474,6 @@ static BOOL DrawVideoFrame(VIDframe* vidFrame, RGBQUAD* tBuff, UINT tWidth, DWOR
     (*p_wc4_xanlib_drawframeXD)(vidFrame, pSurface, pitch, xan_flags);
 
     surface_movieXAN->Unlock();
-    MovieRT_SetRenderTarget();
-    surface_movieXAN->Display();
 
     return TRUE;
 }
@@ -1745,8 +1743,6 @@ static BOOL Play_HD_Movie_Sequence_Primary(char* mve_path) {
     Debug_Info_Movie("Play_HD_Movie_Sequence: first branch: %d", *p_wc4_movie_branch_list);
     //Debug_Info("max branches:%d", ((LONG*)p_wc4_movie_class)[21]);
 
-    MovieRT_Clear();
-
     if (pMovie_vlc)
         delete pMovie_vlc;
     std::string movie_name;
@@ -1895,8 +1891,6 @@ static BOOL Play_HD_Movie_Sequence_Secondary(void* p_wc4_movie_class, void* p_si
     Debug_Info_Movie("Play_HD_Movie_Sequence_Secondary: first branch: %d", *p_wc4_movie_branch_list);
     //Debug_Info_Movie("max branches:%d", ((LONG*)p_wc4_movie_class)[21]);
 
-    MovieRT_Clear();
-
     if (pMovie_vlc)
         delete pMovie_vlc;
     std::string movie_name;
@@ -1932,13 +1926,13 @@ static BOOL Play_HD_Movie_Sequence_Secondary(void* p_wc4_movie_class, void* p_si
             }
         }
     }
+    delete pMovie_vlc;
+    pMovie_vlc = nullptr;
+
     //if alternate movie failed to play, continue movie using original player.
     if (!play_successfull)
         play_successfull = (*p_wc4_xanlib_play)(p_sig_movie_class, (LONG)length);// wc4_sig_movie_play_sequence(p_sig_movie_class, sig_movie_flags);
     
-    delete pMovie_vlc;
-    pMovie_vlc = nullptr;
-
     Debug_Info_Movie("Play_HD_Movie_Sequence_Secondary: Done");
     return play_successfull;
 }
