@@ -325,6 +325,47 @@ void Music_Class_Destructor() {
 #endif
 
 
+//________________________________________________
+static void Modify_Object_LOD_Distance(DWORD* LOD) {
+
+    static int lod_modifier = 100;
+    static bool run_once = false;
+    if (!run_once) {
+        lod_modifier = ConfigReadInt(L"SPACE", L"LOD_LEVEL_DISTANCE_MODIFIER", CONFIG_SPACE_LOD_LEVEL_DISTANCE_MODIFIER);
+        if (lod_modifier < 100)
+            lod_modifier = 100;
+
+        run_once = true;
+        Debug_Info("LOD_LEVEL_DISTANCE_MODIFIER SET AT: %d%%", lod_modifier);
+    }
+    if (*LOD > 7)//Ignore values 7 or less. LOD dist 0-7 used by afterburner effect animation.
+        *LOD = *LOD * lod_modifier / 100;
+    //Debug_Info("Modify_Object_LOD dist:%d", *LOD);
+}
+
+
+//________________________________________________________
+static void __declspec(naked) modify_object_lod_dist(void) {
+
+    __asm {
+        pushad
+        mov ecx, ebx
+        add ecx, 0x30
+        push ecx
+        call Modify_Object_LOD_Distance
+        add esp, 0x4
+        popad
+        //re-insert original code
+#ifdef VERSION_WC4_DVD
+        mov edi, dword ptr ds : [ebp + 0x90]
+#else
+        mov eax, dword ptr ds : [eax + 0x90]
+#endif
+        ret
+    }
+}
+
+
 #ifdef VERSION_WC4_DVD
 //_______________________________
 void Modifications_GeneralFixes() {
@@ -347,6 +388,10 @@ void Modifications_GeneralFixes() {
     MemWrite16(0x4529D0, 0xEC81, 0xE990);
     FuncWrite32(0x4529D2, 0x0400, (DWORD)&build_save_names_file);
     //------------------------------------------------------------
+
+
+    MemWrite16(0x41F507, 0xBD8B, 0xE890);
+    FuncWrite32(0x41F509, 0x90, (DWORD)&modify_object_lod_dist);
 }
 
 #else
@@ -379,5 +424,9 @@ void Modifications_GeneralFixes() {
     MemWrite32(0x475722, 0x017C2484, 0x03E3);
     MemWrite16(0x475726, 0x0000, 0x9090);
     MemWrite32(0x475728, 0x00000000, 0x90909090);
+
+
+    MemWrite16(0x42A1F3, 0x808B, 0xE890);
+    FuncWrite32(0x42A1F5, 0x90, (DWORD)&modify_object_lod_dist);
 }
 #endif
