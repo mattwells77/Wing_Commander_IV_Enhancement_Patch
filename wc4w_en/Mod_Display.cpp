@@ -1778,10 +1778,11 @@ static BOOL Play_HD_Movie_Sequence_Primary(char* mve_path) {
                 exit_flag = TRUE;
             }
         }
+        pMovie_vlc->Stop();
     }
 
-    delete pMovie_vlc;
-    pMovie_vlc = nullptr;
+    //delete pMovie_vlc;
+    //pMovie_vlc = nullptr;
 
     Debug_Info_Movie("Play_HD_Movie_Sequence: Done:%d", play_successfull);
     return play_successfull;
@@ -1925,14 +1926,17 @@ static BOOL Play_HD_Movie_Sequence_Secondary(void* p_wc4_movie_class, void* p_si
                 exit_flag = TRUE;
             }
         }
+        pMovie_vlc->Stop();
     }
-    delete pMovie_vlc;
-    pMovie_vlc = nullptr;
+    //delete pMovie_vlc;
+    //pMovie_vlc = nullptr;
 
     //if alternate movie failed to play, continue movie using original player.
-    if (!play_successfull)
+    if (!play_successfull) {
+        delete pMovie_vlc;
+        pMovie_vlc = nullptr;
         play_successfull = (*p_wc4_xanlib_play)(p_sig_movie_class, (LONG)length);// wc4_sig_movie_play_sequence(p_sig_movie_class, sig_movie_flags);
-    
+    }
     Debug_Info_Movie("Play_HD_Movie_Sequence_Secondary: Done");
     return play_successfull;
 }
