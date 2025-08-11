@@ -366,6 +366,26 @@ static void __declspec(naked) modify_object_lod_dist(void) {
 }
 
 
+//__________________________________________________________
+static LONG MULTI_ARG1_BY_256_DIV_ARG2(LONG arg1, LONG arg2) {
+    LONGLONG val = (LONGLONG)arg1 << 8;
+    return LONG(val / arg2);
+}
+
+
+//__________________________________________________________
+static LONG MULTI_ARG1_BY_ARG2_DIV_256(LONG arg1, LONG arg2) {
+    LONGLONG val = (LONGLONG)arg1 * arg2;
+    return LONG(val >> 8);
+}
+
+
+//______________________________________________________________________
+static LONG MULTI_ARG1_BY_ARG2_DIV_ARG3(LONG arg1, LONG arg2, LONG arg3) {
+    return LONG((LONGLONG)arg1 * arg2 / arg3);
+}
+
+
 //_________________________________________________
 static void Debug_Info_WC4(const char* format, ...) {
     __Debug_Info(DEBUG_INFO_ERROR, format);
@@ -398,6 +418,20 @@ void Modifications_GeneralFixes() {
 
     MemWrite16(0x41F507, 0xBD8B, 0xE890);
     FuncWrite32(0x41F509, 0x90, (DWORD)&modify_object_lod_dist);
+
+
+    //-----Replacement integer math function-------------------------------
+    //originals causing crashes when imul/idiv were overflowing.
+    MemWrite16(0x47E360, 0x8B55, 0xE990);
+    FuncWrite32(0x47E362, 0x08458BEC, (DWORD)&MULTI_ARG1_BY_256_DIV_ARG2);
+
+    MemWrite16(0x47E373, 0x8B55, 0xE990);
+    FuncWrite32(0x47E375, 0x08458BEC, (DWORD)&MULTI_ARG1_BY_ARG2_DIV_256);
+
+    MemWrite16(0x47E382, 0x8B55, 0xE990);
+    FuncWrite32(0x47E384, 0x08458BEC, (DWORD)&MULTI_ARG1_BY_ARG2_DIV_ARG3);
+    //---------------------------------------------------------------------
+
 
     //-----Debugging---------------------------------------------
     //hijack WC4 Debug info
@@ -449,6 +483,19 @@ void Modifications_GeneralFixes() {
 
     MemWrite16(0x42A1F3, 0x808B, 0xE890);
     FuncWrite32(0x42A1F5, 0x90, (DWORD)&modify_object_lod_dist);
+
+
+    //-----Replacement integer math function-------------------------------
+    //originals causing crashes when imul/idiv were overflowing.
+    MemWrite16(0x49D73C, 0x8B55, 0xE990);
+    FuncWrite32(0x49D73E, 0x08458BEC, (DWORD)&MULTI_ARG1_BY_256_DIV_ARG2);
+
+    MemWrite16(0x49D74F, 0x8B55, 0xE990);
+    FuncWrite32(0x49D751, 0x08458BEC, (DWORD)&MULTI_ARG1_BY_ARG2_DIV_256);
+
+    MemWrite16(0x49D75E, 0x8B55, 0xE990);
+    FuncWrite32(0x49D760, 0x08458BEC, (DWORD)&MULTI_ARG1_BY_ARG2_DIV_ARG3);
+    //---------------------------------------------------------------------
 
 
     //-----Debugging---------------------------------------------
