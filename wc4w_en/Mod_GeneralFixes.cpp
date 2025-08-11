@@ -366,6 +366,12 @@ static void __declspec(naked) modify_object_lod_dist(void) {
 }
 
 
+//_________________________________________________
+static void Debug_Info_WC4(const char* format, ...) {
+    __Debug_Info(DEBUG_INFO_ERROR, format);
+}
+
+
 #ifdef VERSION_WC4_DVD
 //_______________________________
 void Modifications_GeneralFixes() {
@@ -392,6 +398,21 @@ void Modifications_GeneralFixes() {
 
     MemWrite16(0x41F507, 0xBD8B, 0xE890);
     FuncWrite32(0x41F509, 0x90, (DWORD)&modify_object_lod_dist);
+
+    //-----Debugging---------------------------------------------
+    //hijack WC4 Debug info
+    MemWrite8(0x4A2080, 0x56, 0xE9);
+    FuncWrite32(0x4A2081, 0xA0306857, (DWORD)&Debug_Info_WC4);
+
+    //changed key combo for space debug overlay from "ALT+D" to "CTRL+D".
+    MemWrite8(0x440346, 0x03, 0x0C);
+    //Remove the need to need for mitchell mode to enable to display space debug overlay "CTRL+D". 
+    MemWrite16(0x440353, 0x840F, 0x9090);
+    MemWrite32(0x440355, 0x0225, 0x90909090);
+    //Prevent the general space overlay from also being displayed when pressing "CTRL+D".
+    MemWrite8(0x44036B, 0xA3, 0x90);
+    MemWrite32(0x44036C, 0x4C5250, 0x90909090);
+    //___________________________________________________________
 }
 
 #else
@@ -428,5 +449,21 @@ void Modifications_GeneralFixes() {
 
     MemWrite16(0x42A1F3, 0x808B, 0xE890);
     FuncWrite32(0x42A1F5, 0x90, (DWORD)&modify_object_lod_dist);
+
+
+    //-----Debugging---------------------------------------------
+    //hijack WC4 Debug info
+    MemWrite8(0x4AEE47, 0x56, 0xE9);
+    FuncWrite32(0x4AEE48, 0xC8586857, (DWORD)&Debug_Info_WC4);
+
+    //changed key combo for space debug overlay from "ALT+D" to "CTRL+D".
+    MemWrite8(0x40AD17, 0x03, 0x0C);
+    //Remove the need to need for mitchell mode to enable to display space debug overlay "CTRL+D". 
+    MemWrite16(0x40AD25, 0x840F, 0x9090);
+    MemWrite32(0x40AD27, 0x0359, 0x90909090);
+    //Prevent the general space overlay from also being displayed when pressing "CTRL+D".
+    MemWrite8(0x40AD3B, 0xA3, 0x90);
+    MemWrite32(0x40AD3C, 0x4D41B4, 0x90909090);
+    //___________________________________________________________
 }
 #endif
