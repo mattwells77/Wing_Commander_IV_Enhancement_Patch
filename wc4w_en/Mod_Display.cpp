@@ -33,20 +33,12 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define WIN_MODE_STYLE  WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX
 
 
-
-
-BOOL is_cockpit_view = FALSE;
-BOOL is_POV3_view = FALSE;
-
-SCALE_TYPE cockpit_scale_type = SCALE_TYPE::fit;
-BOOL crop_cockpit_rect = TRUE;
 BOOL is_nav_view = FALSE;
 
 BOOL clip_cursor = FALSE;
 static bool is_cursor_clipped = false;
 
 LibVlc_Movie* pMovie_vlc = nullptr;
-
 
 UINT clientWidth = 0;
 UINT clientHeight = 0;
@@ -218,12 +210,6 @@ static BOOL Window_Setup(HWND hwnd) {
         if (!ConfigReadInt(L"MOVIES", L"SHOW_ORIGINAL_MOVIES_INTERLACED", CONFIG_MOVIES_SHOW_ORIGINAL_INTERLACED))
             *p_wc4_movie_no_interlace = true;
     }
-
-    int COCKPIT_MAINTAIN_ASPECT_RATIO = ConfigReadInt(L"SPACE", L"COCKPIT_MAINTAIN_ASPECT_RATIO", CONFIG_SPACE_COCKPIT_MAINTAIN_ASPECT_RATIO);
-    if (COCKPIT_MAINTAIN_ASPECT_RATIO == 0)
-        cockpit_scale_type = SCALE_TYPE::fill;
-    else if (COCKPIT_MAINTAIN_ASPECT_RATIO < 0)
-        crop_cockpit_rect = FALSE;
 
     if (*p_wc4_is_windowed) {
         Debug_Info("Window Setup: Windowed");
@@ -487,18 +473,12 @@ static void __fastcall Set_Space_View_POV1(void* p_space_class) {
 
     WORD* p_view_vars = (WORD*)p_space_class;
 
-    is_cockpit_view = FALSE;
-    is_POV3_view = FALSE;
-    SCALE_TYPE scale_type = SCALE_TYPE::fit;
-
-
     WORD width = (WORD)clientWidth;
     WORD height = (WORD)clientHeight;
 
     p_view_vars[4] = width;
     p_view_vars[5] = height;
 
-    //DWORD* p_cockpit_class1 = ((DWORD**)p_space_class)[44];
     DWORD* p_cockpit_class2 = ((DWORD**)p_space_class)[69];
 
     LONG xpos = p_cockpit_class2[40];
@@ -508,9 +488,7 @@ static void __fastcall Set_Space_View_POV1(void* p_space_class) {
     p_view_vars[6] = (WORD)(xpos / (float)GUI_WIDTH * width);
     p_view_vars[7] = (WORD)(ypos / (float)GUI_HEIGHT * height);
 
-    Debug_Info_Flight("Set_Space_View_POV1 centre_x=%d, centre_y=%d, new_centre_x=%d, new_centre_y=%d", xpos, ypos, p_view_vars[6], p_view_vars[7]);
-
-    surface_space2D->ScaleTo((float)clientWidth, (float)clientHeight, scale_type);
+    //Debug_Info_Flight("Set_Space_View_POV1 centre_x=%d, centre_y=%d, new_centre_x=%d, new_centre_y=%d", xpos, ypos, p_view_vars[6], p_view_vars[7]);
 }
 
 
@@ -552,28 +530,22 @@ static void __fastcall Set_Space_View_POV3(void* p_space_class, DRAW_BUFFER_MAIN
 
     //Debug_Info("Set_Space_View_POV3 - %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d", p_view_vars[0], p_view_vars[1], p_view_vars[2], p_view_vars[3], p_view_vars[4], p_view_vars[5], p_view_vars[6], p_view_vars[7],
     //    p_view_vars[8], p_view_vars[9], p_view_vars[10], p_view_vars[11], p_view_vars[12], p_view_vars[13], p_view_vars[14], p_view_vars[15]);
-    is_cockpit_view = FALSE;
 
     WORD width = (WORD)clientWidth;
     WORD height = (WORD)clientHeight;
 
-    //rear view vdu screen is 122*100, check for it here to prevent it being resized.
-    if (p_db && p_db->rc.right == 121 && p_db->rc.bottom == 99) {
-        width = 122;
+    //rear view vdu screen is 120*100, check for it here to prevent it being resized.
+    if (p_db && p_db->rc.right == 119 && p_db->rc.bottom == 99) {
+        //Debug_Info_Flight("Set_Space_View_POV3 p_db->rc.right=%d, p_db->rc.bottom=%d", p_db->rc.right, p_db->rc.bottom);
+        width = 120;
         height = 100;
-        //if in cockpit view, make sure flag is set to enable clipping rect.
-        if (*p_wc4_space_view_type == SPACE_VIEW_TYPE::Cockpit)
-            is_cockpit_view = TRUE;
     }
-    else
-        surface_space2D->ScaleTo((float)clientWidth, (float)clientHeight, SCALE_TYPE::fit);// dont alter the scale type when drawing rear view vdu.
 
     p_view_vars[4] = width;
     p_view_vars[5] = height;
 
     p_view_vars[6] = width / 2;
     p_view_vars[7] = height / 2;
-
 
     //Debug_Info("Set_Space_View_POV3 - %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d", p_view_vars[0], p_view_vars[1], p_view_vars[2], p_view_vars[3], p_view_vars[4], p_view_vars[5], p_view_vars[6], p_view_vars[7],
     //    p_view_vars[8], p_view_vars[9], p_view_vars[10], p_view_vars[11], p_view_vars[12], p_view_vars[13], p_view_vars[14], p_view_vars[15]);
@@ -655,7 +627,6 @@ static void Lock_3DSpace_Surface() {
 
 //_________________________________________________________
 static void Lock_3DSpace_Surface_POV1(void* p_space_class) {
-    is_POV3_view = FALSE;
     //Debug_Info("Lock_3DSpace_Surface_POV1 SPACE VIEW POV1 w:%d, h:%d client  w:%d, h:%d", ((WORD*)p_space_class)[4], ((WORD*)p_space_class)[5], clientWidth, clientHeight);
     if (((WORD*)p_space_class)[4] != (WORD)clientWidth || ((WORD*)p_space_class)[5] != (WORD)clientHeight) {
         Debug_Info_Flight("Lock_3DSpace_Surface_POV1 RESIZING SPACE VIEW POV1");
@@ -701,7 +672,6 @@ static void __declspec(naked) lock_3dspace_surface_pov1(void) {
 //_________________________________________________________
 static void Lock_3DSpace_Surface_POV3(void* p_space_struct) {
     //Debug_Info("Lock_3DSpace_Surface_POV3");
-    is_POV3_view = TRUE;
     if (((WORD*)p_space_struct)[4] != (WORD)clientWidth || ((WORD*)p_space_struct)[5] != (WORD)clientHeight) {
         //Debug_Info("RESIZING SPACE VIEW POV3");
         Set_Space_View_POV3((WORD*)p_space_struct, nullptr);

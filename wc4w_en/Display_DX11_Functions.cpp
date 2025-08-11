@@ -222,7 +222,7 @@ static void Surfaces_Setup(UINT width, UINT height) {
     }
     if (surface_space2D == nullptr) {
         surface_space2D = new DrawSurface8_RT(0, 0, GUI_WIDTH, GUI_HEIGHT, 32, 0x00000000, true, 255);
-        surface_space2D->ScaleTo((float)width, (float)height, SCALE_TYPE::fill);
+        surface_space2D->ScaleTo((float)width, (float)height, SCALE_TYPE::fit);
         if (!ConfigReadInt(L"MAIN", L"ENABLE_LINEAR_UPSCALING_COCKPIT_HUD", CONFIG_MAIN_ENABLE_LINEAR_UPSCALING_COCKPIT_HUD))
             surface_space2D->Set_Default_SamplerState(pd3dPS_SamplerState_Point);
     }
@@ -309,10 +309,8 @@ void Display_Dx_Present(PRESENT_TYPE present_type) {
     rt_display->ClearRenderTarget(g_d3dDepthStencilView);
     rt_display->SetRenderTarget(g_d3dDepthStencilView);
 
-    //Set_ViewPort(clientWidth, clientHeight);
-
     if (present_type == PRESENT_TYPE::space) {
-        if (is_nav_view || (is_cockpit_view && cockpit_scale_type == SCALE_TYPE::fit && crop_cockpit_rect)) {//when nav screen is up or the cockpit is visible but not streched to fill the screen, clip 3d space view to the cockpit's rect.
+        if (is_nav_view) {//when nav screen is up, clip 3d space view to the cockpit's rect.
             float x_unit = 0;
             float y_unit = 0;
             float x = 0;
@@ -325,12 +323,10 @@ void Display_Dx_Present(PRESENT_TYPE present_type) {
         if (surface_space3D)
             surface_space3D->Display();
 
-        if (pMovie_vlc_Inflight && (*p_wc4_space_view_type == SPACE_VIEW_TYPE::Cockpit || *p_wc4_space_view_type == SPACE_VIEW_TYPE::CockHud) && !is_POV3_view)
+        if (pMovie_vlc_Inflight && p_wc4_camera_01->view_type == SPACE_VIEW_TYPE::CockHud)
             pMovie_vlc_Inflight->Display();
-
-        if (surface_space2D) {
-            surface_space2D->Display();
-        }
+        if (surface_space2D) 
+            surface_space2D->Display();  
     }
     else {
         if (present_type == PRESENT_TYPE::movie) {

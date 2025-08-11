@@ -361,9 +361,6 @@ public:
         if (surface)
             delete surface;
         surface = nullptr;
-        if (surface_bg)
-            delete surface_bg;
-        surface_bg = nullptr;
         Debug_Info_Movie("LibVlc_MovieInflight: destroy: %s", path.c_str());
     };
     bool Check_Play_Time() {
@@ -463,7 +460,6 @@ private:
     float position;
     bool is_vlc_playing;
     DrawSurface* surface;
-    DrawSurface8_RT* surface_bg;
     RECT rc_dest_unscaled;
 
     libvlc_time_t time_ms_length;

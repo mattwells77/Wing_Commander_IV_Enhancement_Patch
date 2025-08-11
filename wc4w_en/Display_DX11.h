@@ -27,6 +27,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
 #include <DirectXColors.h>
+#include <DirectXPackedVector.h>
 #include <dxgi.h>
 #include <dxgi1_2.h>
 
@@ -39,10 +40,6 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "winmm.lib")
-
-
-#include <DirectXMath.h>
-#include <DirectXPackedVector.h>
 
 
 #define RGBA_32BIT(a,r,g,b) (a<<24) | (r<<16) | (g<<8) | (b)
@@ -1113,13 +1110,7 @@ extern DrawSurface* surface_space3D;
 extern DrawSurface8_RT* surface_space2D;
 extern DrawSurface8_RT* surface_movieXAN;
 
-extern BOOL is_cockpit_view;
-extern BOOL is_POV3_view;
-
-extern BOOL crop_cockpit_rect;
-extern SCALE_TYPE cockpit_scale_type;
 extern BOOL is_nav_view;
-
 
 void Palette_Update(BYTE* p_pal_buff, BYTE offset, DWORD num_entries);
 

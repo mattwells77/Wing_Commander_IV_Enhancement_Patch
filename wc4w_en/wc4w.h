@@ -180,6 +180,14 @@ enum class SPACE_VIEW_TYPE : WORD {
     Track = 11,
 };
 
+//this structure is very incomplete and likely larger than specified.
+struct CAMERA_CLASS_01 {
+    DWORD unk00;//0x00
+    DWORD unk04;//0x04
+    DWORD unk08;//0x08
+    SPACE_VIEW_TYPE view_type;//0x0C
+    //WORD unk05;//0x10
+};
 
 void WC4W_Setup();
 
@@ -210,7 +218,8 @@ extern LARGE_INTEGER* p_wc4_movie_click_time;
 //extern LONG* p_wc4_x_centre_hud;
 //extern LONG* p_wc4_y_centre_hud;
 
-extern SPACE_VIEW_TYPE* p_wc4_space_view_type;
+extern SPACE_VIEW_TYPE* p_wc4_view_current_dir;
+extern CAMERA_CLASS_01* p_wc4_camera_01;
 
 extern BOOL* p_wc4_is_mouse_present;
 

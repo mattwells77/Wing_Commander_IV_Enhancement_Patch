@@ -57,7 +57,7 @@ BOOL is_inflight_mono_shader_enabled = FALSE;
 BOOL inflight_use_audio_from_file_if_present = 1;
 SCALE_TYPE inflight_display_aspect_type = SCALE_TYPE::fit;
 
-DWORD inflight_cockpit_bg_colour_argb = 0xFF000000;
+//DWORD inflight_cockpit_bg_colour_argb = 0xFF000000;
 
 LibVlc_MovieInflight* pMovie_vlc_Inflight = nullptr;
 
@@ -196,8 +196,6 @@ static BOOL Set_Movie_Settings() {
         inflight_display_aspect_type = SCALE_TYPE::fill;
     else
         inflight_display_aspect_type = SCALE_TYPE::fit;
-
-    inflight_cockpit_bg_colour_argb = 0xFF000000 | ConfigReadInt(L"MOVIES", L"INFLIGHT_COCKPIT_BG_COLOUR_RGB", CONFIG_MOVIES_INFLIGHT_COCKPIT_BG_COLOUR_RGB);
 
     if (ConfigReadInt(L"MOVIES", L"INFLIGHT_MONO_SHADER_ENABLE", CONFIG_INFLIGHT_MONO_SHADER_ENABLE)) {
         is_inflight_mono_shader_enabled = TRUE;
@@ -811,38 +809,8 @@ LibVlc_MovieInflight::LibVlc_MovieInflight(const char* file_name, RECT* p_rc_des
         c++;
     }
 
-    if (p_rc_dest_unscaled) {
+    if (p_rc_dest_unscaled) 
         CopyRect(&rc_dest_unscaled, p_rc_dest_unscaled);
-        if (!surface_bg && inflight_display_aspect_type == SCALE_TYPE::fit) {
-            LONG bg_x = rc_dest_unscaled.left - 1;
-            if (bg_x < 0)
-                bg_x = 0;
-            LONG bg_y = rc_dest_unscaled.top - 1;
-            if (bg_y < 0)
-                bg_y = 0;
-            DWORD bg_width = rc_dest_unscaled.right - rc_dest_unscaled.left + 1 + 2;
-            DWORD bg_height = rc_dest_unscaled.bottom - rc_dest_unscaled.top + 1 + 2;
-
-            surface_bg = new DrawSurface8_RT(0, 0, bg_width, bg_height, 32, inflight_cockpit_bg_colour_argb, true, 255);
-            if (!ConfigReadInt(L"MAIN", L"ENABLE_LINEAR_UPSCALING_COCKPIT_HUD", CONFIG_MAIN_ENABLE_LINEAR_UPSCALING_COCKPIT_HUD))
-                surface_bg->Set_Default_SamplerState(pd3dPS_SamplerState_Point);
-            //Copy cockpit\hud background to draw behind movie. Falling back on inflight_cockpit_bg_colour_argb if starting in HUD view and background is the mask colour.
-            BYTE* pSurface = nullptr;
-            LONG pitch = 0;
-            if (surface_bg->Lock((VOID**)&pSurface, &pitch) == S_OK) {
-                DWORD m_width = (**pp_wc4_db_game_main).rc.right - (**pp_wc4_db_game_main).rc.left + 1;
-                DWORD m_height = (**pp_wc4_db_game_main).rc.bottom - (**pp_wc4_db_game_main).rc.top + 1;
-                BYTE* fBuff = (**pp_wc4_db_game_main).db->buff + m_width * bg_y + bg_x;
-
-                for (UINT y = 0; y < bg_height; y++) {
-                    memcpy(pSurface, fBuff, bg_width);
-                    fBuff += m_width;
-                    pSurface += pitch;
-                }
-                surface_bg->Unlock();
-            }
-        }
-    }
     else {
         Debug_Info_Error("LibVlc_MovieInflight: destination Rect not set: %s", movie_name);
         isError = true;
@@ -883,38 +851,8 @@ LibVlc_MovieInflight::LibVlc_MovieInflight(const char* file_name, RECT* p_rc_des
         c++;
     }
 
-    if (p_rc_dest_unscaled) {
+    if (p_rc_dest_unscaled) 
         CopyRect(&rc_dest_unscaled, p_rc_dest_unscaled);
-        if (!surface_bg && inflight_display_aspect_type == SCALE_TYPE::fit) {
-            LONG bg_x = rc_dest_unscaled.left - 1;
-            if (bg_x < 0)
-                bg_x = 0;
-            LONG bg_y = rc_dest_unscaled.top - 1;
-            if (bg_y < 0)
-                bg_y = 0;
-            DWORD bg_width = rc_dest_unscaled.right - rc_dest_unscaled.left + 1 + 2;
-            DWORD bg_height = rc_dest_unscaled.bottom - rc_dest_unscaled.top + 1 + 2;
-
-            surface_bg = new DrawSurface8_RT(0, 0, bg_width, bg_height, 32, inflight_cockpit_bg_colour_argb, true, 255);
-            if (!ConfigReadInt(L"MAIN", L"ENABLE_LINEAR_UPSCALING_COCKPIT_HUD", CONFIG_MAIN_ENABLE_LINEAR_UPSCALING_COCKPIT_HUD))
-                surface_bg->Set_Default_SamplerState(pd3dPS_SamplerState_Point);
-            //Copy cockpit\hud background to draw behind movie. Falling back on inflight_cockpit_bg_colour_argb if starting in HUD view and background is the mask colour.
-            BYTE* pSurface = nullptr;
-            LONG pitch = 0;
-            if (surface_bg->Lock((VOID**)&pSurface, &pitch) == S_OK) {
-                DWORD m_width = (**pp_wc4_db_game_main).rc.right - (**pp_wc4_db_game_main).rc.left + 1;
-                DWORD m_height = (**pp_wc4_db_game_main).rc.bottom - (**pp_wc4_db_game_main).rc.top + 1;
-                BYTE* fBuff = (**pp_wc4_db_game_main).db->buff + m_width * bg_y + bg_x;
-
-                for (UINT y = 0; y < bg_height; y++) {
-                    memcpy(pSurface, fBuff, bg_width);
-                    fBuff += m_width;
-                    pSurface += pitch;
-                }
-                surface_bg->Unlock();
-            }
-        }
-    }
     else {
         Debug_Info_Error("LibVlc_MovieInflight: destination Rect not set: %s", movie_name);
         isError = true;
@@ -939,7 +877,7 @@ void LibVlc_MovieInflight::libvlc_movieinflight_initialise() {
     has_audio = false;
 
     surface = nullptr;
-    surface_bg = nullptr;
+
     play_setup_start = false;
     play_setup_complete = false;
 
@@ -1181,10 +1119,6 @@ void LibVlc_MovieInflight::Update_Display_Dimensions(RECT* p_rc_gui_unscaled) {
         surface->SetPosition(posX + (rc_dest_unscaled.left + x) * scaleX, posY + (rc_dest_unscaled.top + y) * scaleY);
         surface->SetScale(width / movie_width * scaleX, height / movie_height * scaleY);
     }
-    if (surface_bg) {
-        surface_bg->SetPosition(posX + (rc_dest_unscaled.left - 1) * scaleX, posY + (rc_dest_unscaled.top - 1) * scaleY);
-        surface_bg->SetScale(scaleX, scaleY);
-    }
 }
 
 
@@ -1192,8 +1126,6 @@ void LibVlc_MovieInflight::Update_Display_Dimensions(RECT* p_rc_gui_unscaled) {
 void LibVlc_MovieInflight::Display() {
     if (!play_setup_complete)//play_counter_started)
         return;
-    if (surface_bg && *p_wc4_space_view_type == SPACE_VIEW_TYPE::Cockpit)
-        surface_bg->Display();
     if (surface) {
         if (is_inflight_mono_shader_enabled)
             surface->Display(pd3d_PS_Greyscale_Tex_32);
