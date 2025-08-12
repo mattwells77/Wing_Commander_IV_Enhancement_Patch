@@ -102,12 +102,27 @@ static void __declspec(naked) close_file_handle(void) {
 */
 
 //Fixed a code error on a call to the "VirtualProtect" function, where the "lpflOldProtect" parameter was set to NULL when it should point to a place to store the previous access protection value.
-//___________________________________________________________________________________________________________________
-static BOOL __stdcall VirtualProtect_Fix(LPVOID lpAddress, SIZE_T dwSize, DWORD  flNewProtect, PDWORD lpflOldProtect) {
+//______________________________
+static void VirtualProtect_Fix() {
     DWORD oldProtect;
-    return VirtualProtect(lpAddress, dwSize, flNewProtect, &oldProtect);
+#ifdef VERSION_WC4_DVD
+    VirtualProtect((LPVOID)0x4950B0, 0x49C7DE - 0x4950B0, PAGE_EXECUTE_READWRITE, &oldProtect);
+#else
+    VirtualProtect((LPVOID)0x48D864, 0x494F92 - 0x48D864, PAGE_EXECUTE_READWRITE, &oldProtect);
+#endif
 }
-void* p_virtualprotect_fix = &VirtualProtect_Fix;
+
+
+//____________________________________________________
+static void __declspec(naked) virtualprotect_fix(void) {
+
+    __asm {
+        pushad
+        call VirtualProtect_Fix
+        popad
+        ret
+    }
+}
 
 
 //_____________________________________________________________
@@ -400,8 +415,7 @@ void Modifications_GeneralFixes() {
     FuncReplace32(0x4897B3, 0x2199, (DWORD)&load_data_file);
 
     //Fixed a code error on a call to the "VirtualProtect" function, where the "lpflOldProtect" parameter was set to NULL when it should point to a place to store the previous access protection value.
-    MemWrite32(0x4773E9, 0x4D44D0, (DWORD)&p_virtualprotect_fix);
-    
+    FuncReplace32(0x4769BE, 0x0A0E, (DWORD)&virtualprotect_fix);
 
     //-----------------------UAC-Patch---------------------------
     //Alter the save location of files to the RoamingAppData folder. To allow the game to work without admin privileges when installed under ProgramFiles and to seperate game data between different Windows users.
@@ -459,7 +473,8 @@ void Modifications_GeneralFixes() {
     //FuncReplace32(0x49ABE9, 0x0F82, (DWORD)&close_file_handle);
 
     //Fixed a code error on a call to the "VirtualProtect" function, where the "lpflOldProtect" parameter was set to NULL when it should point to a place to store the previous access protection value.
-    MemWrite32(0x4107D7, 0x4DE36C, (DWORD)&p_virtualprotect_fix);
+    FuncReplace32(0x410B29, 0xFFFFFC93, (DWORD)&virtualprotect_fix);
+
 
     //-----------------------UAC-Patch---------------------------
     //Alter the save location of files to the RoamingAppData folder. To allow the game to work without admin privileges when installed under ProgramFiles and to seperate game data between different Windows users.
