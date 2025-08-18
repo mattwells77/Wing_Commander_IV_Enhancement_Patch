@@ -407,6 +407,18 @@ static void Debug_Info_WC4(const char* format, ...) {
 }
 
 
+//_____________________________________________________
+static void __declspec(naked) fix_audio_data_size(void) {
+    //Retrieve the WAV audio buffer size from the WAV header.
+    //This value was originally defined by subtracting the WAV header size from the file size. And was occasionally including non audio data in the buffer, causing popping and static sounds.
+    __asm {
+        mov esi, dword ptr ds:[ebx+0x24]
+        mov ebp, dword ptr ds : [esi+0x28]
+        ret
+    }
+}
+
+
 #ifdef VERSION_WC4_DVD
 //_______________________________
 void Modifications_GeneralFixes() {
@@ -461,6 +473,11 @@ void Modifications_GeneralFixes() {
     MemWrite8(0x44036B, 0xA3, 0x90);
     MemWrite32(0x44036C, 0x4C5250, 0x90909090);
     //___________________________________________________________
+
+
+    //Fix for some static and popping sounds at the end of playback when playing some audio samples. 
+    MemWrite16(0x45E333, 0x738B, 0xE890);
+    FuncWrite32(0x45E335, 0x046B8B24, (DWORD)&fix_audio_data_size);
 }
 
 #else
@@ -527,5 +544,10 @@ void Modifications_GeneralFixes() {
     MemWrite8(0x40AD3B, 0xA3, 0x90);
     MemWrite32(0x40AD3C, 0x4D41B4, 0x90909090);
     //___________________________________________________________
+
+
+    //Fix for some static and popping sounds at the end of playback when playing some audio samples. 
+    MemWrite16(0x48607F, 0x6B8B, 0xE890);
+    FuncWrite32(0x486081, 0x24738B04, (DWORD)&fix_audio_data_size);
 }
 #endif
