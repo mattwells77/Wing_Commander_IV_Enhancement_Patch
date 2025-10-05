@@ -33,6 +33,7 @@ static void Initialize() {
     //Modifications_Joystick();
     Modifications_Display();
     Modifications_GeneralFixes();
+    Modifications_ObjectRotation();
     WC4W_Setup();
 
 }

@@ -221,6 +221,8 @@ extern LARGE_INTEGER* p_wc4_movie_click_time;
 extern SPACE_VIEW_TYPE* p_wc4_view_current_dir;
 extern CAMERA_CLASS_01* p_wc4_camera_01;
 
+extern void** pp_wc4_player_obj_struct;
+
 extern BOOL* p_wc4_is_mouse_present;
 
 extern WORD* p_wc4_mouse_button;

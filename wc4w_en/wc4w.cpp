@@ -54,6 +54,8 @@ BYTE* p_wc4_main_pal = nullptr;
 SPACE_VIEW_TYPE* p_wc4_view_current_dir = nullptr;
 CAMERA_CLASS_01* p_wc4_camera_01 = nullptr;
 
+void** pp_wc4_player_obj_struct = nullptr;
+
 BOOL* p_wc4_is_mouse_present = nullptr;
 WORD* p_wc4_mouse_button = nullptr;
 WORD* p_wc4_mouse_x = nullptr;
@@ -227,6 +229,8 @@ void WC4W_Setup() {
 
     p_wc4_view_current_dir = (SPACE_VIEW_TYPE*)0x4BB820;
     p_wc4_camera_01 = (CAMERA_CLASS_01*)0x4BB3B8;
+
+    pp_wc4_player_obj_struct = (void**)0x4BD1AC;
 
     //p_wc4_client_width = (DWORD*)0x4D40FC;
     //p_wc4_client_height = (DWORD*)0x4D4100;
@@ -409,6 +413,8 @@ void WC4W_Setup() {
 
     p_wc4_view_current_dir = (SPACE_VIEW_TYPE*)0x4D4534;
     p_wc4_camera_01 = (CAMERA_CLASS_01*)0x4C06C8;
+
+    pp_wc4_player_obj_struct = (void**)0x4C1D1C;
 
     //p_wc4_client_width = (DWORD*)0x4D40FC;
     //p_wc4_client_height = (DWORD*)0x4D4100;
