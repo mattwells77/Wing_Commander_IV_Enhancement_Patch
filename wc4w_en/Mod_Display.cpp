@@ -1747,6 +1747,7 @@ static void Palette_Update_Main(BYTE* p_pal_buff, BYTE offset, DWORD num_entries
 
 //__________________________
 static void Movie_Fade_Out() {
+
     LARGE_INTEGER thisTime = { 0LL };
     LARGE_INTEGER nextTime = { 0LL };
     LARGE_INTEGER update_offset{ 0LL };
@@ -1754,16 +1755,15 @@ static void Movie_Fade_Out() {
     QueryPerformanceCounter(&thisTime);
     nextTime.QuadPart = thisTime.QuadPart + update_offset.QuadPart;
 
-    int num = 0;
+    int count = 0;
 
-    while (num < 16) {
+    while (count < 16) {
         QueryPerformanceCounter(&thisTime);
         if (thisTime.QuadPart >= nextTime.QuadPart) {
             nextTime.QuadPart = thisTime.QuadPart + update_offset.QuadPart;
-            num++;
-            Set_Movie_Fade_Level(num);
+            count++;
+            Set_Movie_Fade_Level(count);
             Display_Dx_Present();
-            Debug_Info("Brightness_Fade_Out: %d", num);
         }
     }
 
