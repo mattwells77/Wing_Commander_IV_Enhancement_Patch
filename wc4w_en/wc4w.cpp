@@ -176,6 +176,7 @@ DWORD* p_wc4_key_scancode = nullptr;
 
 bool* p_wc4_movie_halt_flag = nullptr;
 
+DWORD* p_wc4_movie_frame_count = nullptr;
 
 BOOL(__thiscall* wc4_load_file_handle)(void*, BOOL print_error_flag, BOOL unknown_flag) = nullptr;
 LONG(*wc4_find_file_in_tre)(char* pfile_name) = nullptr;
@@ -318,6 +319,7 @@ void WC4W_Setup() {
 
     p_wc4_movie_halt_flag = (bool*)0x4CB9D8;
 
+    p_wc4_movie_frame_count = (DWORD*)0x4CB9C0;
 
     wc4_draw_choice_text_buff = (void(*)(void*, BYTE*, DWORD))0x469110;
 
@@ -501,6 +503,7 @@ void WC4W_Setup() {
 
     p_wc4_movie_halt_flag = (bool*)0x4D94C0;
 
+    p_wc4_movie_frame_count = (DWORD*)0x4D94A4;
 
     wc4_draw_choice_text_buff = (void(*)(void*, BYTE*, DWORD))0x485260;
 

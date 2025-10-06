@@ -1745,6 +1745,54 @@ static void Palette_Update_Main(BYTE* p_pal_buff, BYTE offset, DWORD num_entries
 }
 
 
+//__________________________
+static void Movie_Fade_Out() {
+    LARGE_INTEGER thisTime = { 0LL };
+    LARGE_INTEGER nextTime = { 0LL };
+    LARGE_INTEGER update_offset{ 0LL };
+    update_offset.QuadPart = p_wc4_frequency->QuadPart / 32;
+    QueryPerformanceCounter(&thisTime);
+    nextTime.QuadPart = thisTime.QuadPart + update_offset.QuadPart;
+
+    int num = 0;
+
+    while (num < 16) {
+        QueryPerformanceCounter(&thisTime);
+        if (thisTime.QuadPart >= nextTime.QuadPart) {
+            nextTime.QuadPart = thisTime.QuadPart + update_offset.QuadPart;
+            num++;
+            Set_Movie_Fade_Level(num);
+            Display_Dx_Present();
+            Debug_Info("Brightness_Fade_Out: %d", num);
+        }
+    }
+
+    //clear movie buffers before resetting fade level.
+    if (pMovie_vlc) {
+        DrawSurface* surface = pMovie_vlc->Get_Currently_Playing_Surface();
+        if (surface)
+            surface->Clear_Texture(0);
+    }
+    if (surface_movieXAN)
+        surface_movieXAN->Clear_Texture(0);
+    //set level to 0 to end fade out.
+    Set_Movie_Fade_Level(0);
+    Display_Dx_Present();
+}
+
+
+//________________________________________________
+static void __declspec(naked) movie_fade_out(void) {
+
+    __asm {
+        pushad
+        call Movie_Fade_Out
+        popad
+
+        ret
+    }
+}
+
 //________________________________________________________
 static BOOL Play_HD_Movie_Sequence_Primary(char* mve_path) {
 
@@ -1802,8 +1850,8 @@ static BOOL Play_HD_Movie_Sequence_Primary(char* mve_path) {
 }
 
 
-//_____________________________________________________
-static BOOL Play_HD_Movie_Sequence_Main(char* mve_path) {
+//____________________________________________________________________
+static BOOL Play_HD_Movie_Sequence_Main(char* mve_path, BYTE fade_out) {
 
     DXGI_RATIONAL refreshRate{};
     refreshRate.Denominator = 1;
@@ -1843,13 +1891,15 @@ static BOOL Play_HD_Movie_Sequence_Main(char* mve_path) {
 
     if (surface_gui)
         surface_gui->Clear_Texture(0);
+    if (fade_out && play_successfull)
+        Movie_Fade_Out();
 
     Debug_Info_Movie("Play_HD_Movie_Sequence_Main end");
     return play_successfull;
 }
 
 
-//________________________________________________________
+//_____________________________________________________________
 static void __declspec(naked) play_hd_movie_sequence_main(void) {
 
     __asm {
@@ -1860,9 +1910,12 @@ static void __declspec(naked) play_hd_movie_sequence_main(void) {
         push esi
         push ebp
 
-        push [esp + 0x20]//path
+        mov edx, dword ptr ss:[esp+ 0x30]//fade_out flag
+        mov ecx, dword ptr ss : [esp + 0x20]//path
+        push edx
+        push ecx
         call Play_HD_Movie_Sequence_Main
-        add esp, 0x4
+        add esp, 0x8
 
         pop ebp
         pop esi
@@ -1950,6 +2003,8 @@ static BOOL Play_HD_Movie_Sequence_Secondary(void* p_wc4_movie_class, void* p_si
         pMovie_vlc = nullptr;
         play_successfull = (*p_wc4_xanlib_play)(p_sig_movie_class, (LONG)length);// wc4_sig_movie_play_sequence(p_sig_movie_class, sig_movie_flags);
     }
+    else
+        *p_wc4_movie_frame_count += 1;//this global needs to be set to evoke the movie fade out function.
 
     Sleep(150);//add a small delay to reduce unintended button clicks after ending a movie by double-clicking.
 
@@ -2630,6 +2685,11 @@ void Modifications_Display() {
     //backup if the above fails. Here the original movie sequence will play if a HD movie fails.
     MemWrite32(0x47B150, 0x4D461C, (DWORD)&p_play_hd_movie_sequence_secondary);
 
+    //fade out effect for 8bit movies
+    FuncReplace32(0x47B239, 0x05F3, (DWORD)&movie_fade_out);
+    //fade out effect for 16bit movies
+    FuncReplace32(0x47B240, 0x07BC, (DWORD)&movie_fade_out);
+
     MemWrite8(0x40CE39, 0xA1, 0xE8);
     FuncWrite32(0x40CE3A, 0x4BB9C8, (DWORD)&play_inflight_movie);
 
@@ -2904,6 +2964,11 @@ void Modifications_Display() {
 
     //backup if the above fails. Here the original movie sequence will play if a HD movie fails.
     MemWrite32(0x483F2D, 0x4DE4E0, (DWORD)&p_play_hd_movie_sequence_secondary);
+
+    //fade out effect for 8bit movies
+    FuncReplace32(0x48401C, 0xFFFFF530, (DWORD)&movie_fade_out);
+    //fade out effect for 16bit movies
+    FuncReplace32(0x484023, 0xFFFFF6D9, (DWORD)&movie_fade_out);
 
     MemWrite8(0x424722, 0xA1, 0xE8);
     FuncWrite32(0x424723, 0x4D4BD8, (DWORD)&play_inflight_movie);

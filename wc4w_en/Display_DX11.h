@@ -76,6 +76,7 @@ extern ID3D11PixelShader* pd3d_PS_Basic_Tex_32;
 extern ID3D11PixelShader* pd3d_PS_Basic_Tex_8;
 extern ID3D11PixelShader* pd3d_PS_Basic_Tex_8_masked;
 extern ID3D11PixelShader* pd3d_PS_Greyscale_Tex_32;
+extern ID3D11PixelShader* pd3d_PS_Brightness_Tex_32;
 
 extern ID3D11SamplerState* pd3dPS_SamplerState_Point;
 extern ID3D11SamplerState* pd3dPS_SamplerState_Linear;
@@ -1126,3 +1127,5 @@ BOOL Get_Monitor_Refresh_Rate(HWND hwnd, DXGI_RATIONAL* refreshRate);
 
 void Inflight_Mono_Colour_Setup(DWORD colour, UINT brightness, UINT contrast);
 void Reset_DX11_Shader_Defaults();
+
+void Set_Movie_Fade_Level(UINT level);

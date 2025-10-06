@@ -78,6 +78,9 @@
     <ClInclude Include="shaders\compiled_h\VS_Basic.h">
       <Filter>Shaders\compiled_h</Filter>
     </ClInclude>
+    <ClInclude Include="shaders\compiled_h\PS_Brightness_Tex_32.h">
+      <Filter>Shaders\compiled_h</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -168,6 +171,9 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="shaders\VS_Basic.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="shaders\PS_Brightness_Tex_32.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>
