@@ -1091,7 +1091,7 @@ void JOYSTICKS::Centre_All() {
 
 //______________________
 static void Joy_Update() {
-
+	
 	Joysticks.Update();
 }
 
@@ -1156,6 +1156,22 @@ static void __declspec(naked) joy_setup(void) {
 	}
 }
 
+
+//___________________________________________________
+static void __declspec(naked) joy_roll_variable(void) {
+
+	__asm {
+		mov edx, dword ptr ds : [esi + 0xF4]
+		mov edi, p_wc4_joy_move_r
+		cmp dword ptr ds : [edi] , 0
+		je exit_func
+		mov edi, dword ptr ds : [edi]
+		mov dword ptr ds : [edx + 0x14] , edi
+		exit_func :
+		ret
+	}
+}
+
 /*
 //___________________________
 void Print_Scancode(int code) {
@@ -1211,18 +1227,10 @@ void Modifications_Joystick() {
 	
 
 	//make the roll axis variable -------------
-	// 
-	//skip over sign check and move the roll axis value into the player movement structure
-	MemWrite16(0x44BCCE, 0xC53B, 0x9090);
-	MemWrite16(0x44BCD0, 0x177D, 0x9090);
-
-	MemWrite8(0x44BCDC, 0xB8, 0x90);
-	MemWrite32(0x44BCDD, 0xFFFFFF00, 0x90909090);
-
-	//jmp this bit
-	MemWrite8(0x44BD0A, 0x7E, 0xEB);
+	MemWrite16(0x44BD2B, 0x968B, 0xE890);
+	FuncWrite32(0x44BD2D, 0xF4, (DWORD)&joy_roll_variable);
 	//----------------------------------------
-	
+
 	//print scancodes
 	//MemWrite16(0x4ADD0E, 0x918A, 0xE890);///////
 	//FuncWrite32(0x4ADD10, 0x4CE7C0, (DWORD)&print_scancode);//////////
@@ -1231,9 +1239,6 @@ void Modifications_Joystick() {
 #else
 //___________________________
 void Modifications_Joystick() {
-
-	//0046F120 / $  8B4424 04                MOV EAX, DWORD PTR SS : [ARG.1] ; wc4dvd.void SETUP_JOYSTICK ? ? ? (INT flag)(guessed Arg1)
-	//0046F124 | .  53                       PUSH EBX
 
 	MemWrite8(0x412E50, 0x8B, 0xE9);
 	FuncWrite32(0x412E51, 0x53042444, (DWORD)&joy_setup);
@@ -1261,16 +1266,8 @@ void Modifications_Joystick() {
 
 
 	//make the roll axis variable -------------
-	// 
-	//skip over sign check and move the roll axis value into the player movement structure
-	MemWrite16(0x448CCE, 0xC085, 0x9090);
-	MemWrite16(0x448CD0, 0x137D, 0x9090);
-
-	MemWrite8(0x448CD8, 0xB8, 0x90);
-	MemWrite32(0x448CD9, 0xFFFFFF00, 0x90909090);
-
-	//jmp this bit
-	MemWrite8(0x448D07, 0x7E, 0xEB);
+	MemWrite16(0x448D2E, 0x968B, 0xE890);
+	FuncWrite32(0x448D30, 0xF4, (DWORD)&joy_roll_variable);
 	//----------------------------------------
 
 	//print scancodes
