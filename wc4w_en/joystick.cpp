@@ -972,7 +972,7 @@ void JOYSTICKS::Update() {
 	if (wc4_joy_axes.r_pos)
 		wc4_joy_axes.r += button_val;
 
-	int deadzone_256 = deadzone * 16;
+	int deadzone_256 = deadzone * 8;
 
 
 	if (wc4_joy_axes.x < -0.5f)

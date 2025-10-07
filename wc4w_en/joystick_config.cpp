@@ -1478,12 +1478,18 @@ static INT_PTR CALLBACK DialogProc_JoyConfig(HWND hwndDlg, UINT uMsg, WPARAM wPa
 		hwnd_sub = GetDlgItem(hwndDlg, IDC_COMBO_DEAD_ZONE);
 
 
-		//wc axes have 16 degrees of movement from centre, mark deadzone levels as percentages for easier reading. 6.25% == 1/16 of axis from centre.
+		//wc3 axes have 16 degrees of movement from centre, mark deadzone levels as percentages for easier reading. 6.25% == 1/16 of axis from centre.
+		//increased deadzone options by a factor of 2.
 		SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)L"0%");
+		SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)L"3.125%");
 		SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)L"6.25%");
+		SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)L"9.375%");
 		SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)L"12.5%");
+		SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)L"15.625%");
 		SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)L"18.75%");
+		SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)L"21.875%");
 		SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)L"25%");
+		SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)L"28.125%");
 		SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)L"31.25%");
 
 		SendMessage(hwnd_sub, CB_SETCURSEL, (WPARAM)Joysticks.Deadzone_Level(), (LPARAM)0);
