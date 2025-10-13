@@ -2339,45 +2339,39 @@ static void Fix_Space_Mouse_Movement(void* p_ship_class, LONG* p_x_roll, LONG* p
     LONG x = *p_wc4_mouse_x_space - *p_wc4_mouse_centre_x;
     LONG y = *p_wc4_mouse_y_space - *p_wc4_mouse_centre_y;
 
-    //fix mouse movement range between -16 and 16.
+    //keep mouse movement range between -320 and 320 to maintain similar experience as original resolution 640x480.
     LONG range = *p_wc4_mouse_centre_y;
     if (*p_wc4_mouse_centre_y > *p_wc4_mouse_centre_x)
         range = *p_wc4_mouse_centre_x;
-    //keep mouse movement range less than 640/2 to maintain similar experience as original resolution 640x480.
     if (range > 320)
         range = 320;
 
-    LONG range_block = range / 16;
+    //apply a small dead zone (320 / 32 = 10).
+    if (x < 10 && x > -10)
+        x = 0;
+    if (y < 10 && y > -10)
+        y = 0;
 
-    x /= range_block;
-    y /= range_block;
+    if (x > range)
+        x = range;
+    else if (x < -range)
+        x = -range;
 
-    if (x > 16)
-        x = 16;
-    else if (x < -16)
-        x = -16;
-
-    if (y > 16)
-        y = 16;
-    else if (y < -16)
-        y = -16;
+    if (y > range)
+        y = range;
+    else if (y < -range)
+        y = -range;
     
-#ifdef VERSION_WC4_DVD
-    *p_x_roll = x;
-#endif   
+    //convert mouse movement value to the ships axis range between -256 and 256 (320 / 256 = 1.25).
+    x = (LONG)(x / 1.25f);
+    y = (LONG)(y / 1.25f);
 
-    *p_y_throttle = y;
-
-    //differs from wc3 here, multiply values by 16
-    x *= 16;
-    y *= 16;
-#ifndef VERSION_WC4_DVD
-    *p_x_roll = x;
-#endif  
+    *p_x_roll = (LONG)x;
+    *p_y_throttle = (LONG)y;
 
     LONG* p_position_class = ((LONG**)p_ship_class)[61];
-    p_position_class[4] = -x;
-    p_position_class[3] = -y;
+    p_position_class[4] = (LONG)-x;
+    p_position_class[3] = (LONG)-y;
 }
 
 
@@ -2657,6 +2651,13 @@ void Modifications_Display() {
     MemWrite8(0x44BE8A, 0x66, 0xE9);
     MemWrite32(0x44BE8B, 0x41AA0D8B, 0x80);
     MemWrite16(0x44BE8F, 0x004C, 0x9090);
+
+    //don't multiply x roll value by 16.
+    MemWrite16(0x44BF2D, 0xE7C1, 0x9090);
+    MemWrite8(0x44BF2F, 0x04, 0x90);
+    //don't multiply x roll value by 16.
+    MemWrite16(0x44C115, 0xE5C1, 0x9090);
+    MemWrite8(0x44C117, 0x04, 0x90);
     //-----------------------------------------------
 
     // HD Movies-----------------------------------------------
