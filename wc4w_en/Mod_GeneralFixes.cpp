@@ -424,6 +424,29 @@ static void __declspec(naked) fix_audio_data_size(void) {
 }
 
 
+//________________________________________________________________________________________________________________
+static void Display_Debug_Info_1(DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, DWORD unk2) {
+    
+    y = (*pp_wc4_db_game_main)->rc.top + 4;
+    wc4_draw_text_to_buff(p_toBuff, x, y, unk1, text_buff, unk2);
+    
+    if (!*pp_wc4_music_thread_class)
+        return;
+    LONG* p_music_data = (LONG*)*pp_wc4_music_thread_class;
+
+    sprintf_s(text_buff, 240, "Requested Tune: %d", p_music_data[3]);
+    y += 10;
+    wc4_draw_text_to_buff(p_toBuff, x, y, unk1, text_buff, unk2);
+
+    sprintf_s(text_buff, 240, "Current Tune: %d", p_music_data[1]);
+    y += 10;
+    wc4_draw_text_to_buff(p_toBuff, x, y, unk1, text_buff, unk2);
+    
+
+
+}
+
+
 #ifdef VERSION_WC4_DVD
 //_______________________________
 void Modifications_GeneralFixes() {
@@ -465,6 +488,9 @@ void Modifications_GeneralFixes() {
 
 
     //-----Debugging---------------------------------------------
+    //For adding debug info to inflight debug overlay. 
+    FuncReplace32(0x4791A4, 0x018201, (DWORD)&Display_Debug_Info_1);
+
     //hijack WC4 Debug info
     MemWrite8(0x4A2080, 0x56, 0xE9);
     FuncWrite32(0x4A2081, 0xA0306857, (DWORD)&Debug_Info_WC4);
@@ -536,6 +562,9 @@ void Modifications_GeneralFixes() {
 
 
     //-----Debugging---------------------------------------------
+    //For adding debug info to inflight debug overlay. 
+    FuncReplace32(0x4129A1, 0x07A33C, (DWORD)&Display_Debug_Info_1);
+
     //hijack WC4 Debug info
     MemWrite8(0x4AEE47, 0x56, 0xE9);
     FuncWrite32(0x4AEE48, 0xC8586857, (DWORD)&Debug_Info_WC4);
