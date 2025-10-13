@@ -554,5 +554,10 @@ void Modifications_GeneralFixes() {
     //Fix for some static and popping sounds at the end of playback when playing some audio samples. 
     MemWrite16(0x48607F, 0x6B8B, 0xE890);
     FuncWrite32(0x486081, 0x24738B04, (DWORD)&fix_audio_data_size);
+
+    //fix long pause occurring after auto pilot.
+    //changed return from "proccess tune" function from 1 to 0.
+    //this now matches code from dvd and wc3 ksaga versions.
+    MemWrite32(0x487E31, 0x01, 0x00);
 }
 #endif
