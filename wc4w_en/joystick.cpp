@@ -1223,6 +1223,9 @@ void Modifications_Joystick() {
 
 	//skip over JOYCAPS.wZmax - JOYCAPS.wZmin and other maniputations
 	MemWrite16(0x44B29D, 0x0D8B, 0x27EB);
+               
+	//100 - joy throttle, (SUB ECX, EAX) to (SUB ECX, EDX)
+	MemWrite16(0x44B2CB, 0xC82B, 0xD129);
 	//--------------------------------------
 	
 
