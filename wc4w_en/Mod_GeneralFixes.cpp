@@ -447,6 +447,101 @@ static void Display_Debug_Info_1(DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD 
 }
 
 
+//______________________________________
+static DWORD Set_VirtualAlloc_Mem_Size() {
+
+    static bool run_once = false;
+    if (!run_once) {
+        DWORD vmem_size = ConfigReadInt(L"MAIN", L"VIRTUAL_MEM_SIZE", CONFIG_MAIN_VIRTUAL_MEM_SIZE);
+        if (vmem_size > *p_wc4_virtual_alloc_mem_size)
+            *p_wc4_virtual_alloc_mem_size = vmem_size;
+
+        run_once = true;
+        Debug_Info("Virtual Mem Allocated: %d bytes", *p_wc4_virtual_alloc_mem_size);
+    }
+
+    return *p_wc4_virtual_alloc_mem_size;
+}
+
+
+//____________________________________________________________
+static void __declspec(naked) set_virtual_alloc_mem_size(void) {
+
+    __asm {
+        push edx
+        push ebx
+        push ecx
+        push edi
+        push esi
+        push ebp
+
+        call Set_VirtualAlloc_Mem_Size
+
+        pop ebp
+        pop esi
+        pop edi
+        pop ecx
+        pop ebx
+        pop edx
+
+        ret
+    }
+}
+
+
+//_________________________________________________
+static LONG Num_Watchers_Overide(LONG num_watchers) {
+
+    static int num_watchers_overide = 500;
+    static bool run_once = false;
+    if (!run_once) {
+        num_watchers_overide = ConfigReadInt(L"MAIN", L"NUM_WATCHERS_OVERIDE", CONFIG_MAIN_NUM_WATCHERS_OVERIDE);
+        if (num_watchers_overide < 500)
+            num_watchers_overide = 500;
+
+        run_once = true;
+        Debug_Info("Max Number Of Watches Overide Value: %d", num_watchers_overide);
+    }
+
+    if (num_watchers < num_watchers_overide) {
+        num_watchers = num_watchers_overide;
+        Debug_Info("Max Number Of Watches Set At: %d", num_watchers);
+    }
+    return num_watchers;
+}
+
+
+//______________________________________________________
+static void __declspec(naked) num_watchers_overide(void) {
+
+    __asm {
+        push edx
+        push ebx
+        push ecx
+        push edi
+        push esi
+        push ebp
+
+        push eax
+        call Num_Watchers_Overide
+        add esp, 0x4
+
+        pop ebp
+        pop esi
+        pop edi
+        pop ecx
+        pop ebx
+        pop edx
+
+        //re-insert original code
+        mov dword ptr ds : [ecx + 0x4], eax
+        mov esi, ecx
+
+        ret
+    }
+}
+
+
 #ifdef VERSION_WC4_DVD
 //_______________________________
 void Modifications_GeneralFixes() {
@@ -509,6 +604,14 @@ void Modifications_GeneralFixes() {
     //Fix for some static and popping sounds at the end of playback when playing some audio samples. 
     MemWrite16(0x45E333, 0x738B, 0xE890);
     FuncWrite32(0x45E335, 0x046B8B24, (DWORD)&fix_audio_data_size);
+
+    //Increase the allocated general memory size.
+    MemWrite8(0x49E542, 0xA1, 0xE8);
+    FuncWrite32(0x49E543, 0x4B6D08, (DWORD)&set_virtual_alloc_mem_size);
+
+    //Increase the max number of watchers at a nav point. (max number of active ships and turrets)
+    MemWrite8(0x481EE5, 0x8B, 0xE8);
+    FuncWrite32(0x481EE6, 0x044689F1, (DWORD)&num_watchers_overide);
 }
 
 #else
@@ -588,5 +691,13 @@ void Modifications_GeneralFixes() {
     //changed return from "proccess tune" function from 1 to 0.
     //this now matches code from dvd and wc3 ksaga versions.
     MemWrite32(0x487E31, 0x01, 0x00);
+
+    //Increase the allocated general memory size.
+    MemWrite8(0x4AD0B2, 0xA1, 0xE8);
+    FuncWrite32(0x4AD0B3, 0x4D3018, (DWORD)&set_virtual_alloc_mem_size);
+
+    //Increase the max number of watchers at a nav point. (max number of active ships and turrets)
+    MemWrite8(0x4A14B5, 0x89, 0xE8);
+    FuncWrite32(0x4A14B6, 0xF18B0441, (DWORD)&num_watchers_overide);
 }
 #endif

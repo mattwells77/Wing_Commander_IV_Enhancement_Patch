@@ -24,6 +24,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "wc4w.h"
 
+DWORD* p_wc4_virtual_alloc_mem_size = nullptr;
 
 char* p_wc4_szAppName = nullptr;
 HINSTANCE* pp_hinstWC4W = nullptr;
@@ -201,6 +202,8 @@ void(*wc4_draw_text_to_buff)(DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1
 #ifdef VERSION_WC4_DVD
 //_______________
 void WC4W_Setup() {
+
+    p_wc4_virtual_alloc_mem_size = (DWORD*)0x4B6D08;
 
     p_wc4_window_has_focus = (BOOL*)0x4B7784;
 
@@ -386,6 +389,8 @@ void WC4W_Setup() {
 #else
 //_______________
 void WC4W_Setup() {
+
+    p_wc4_virtual_alloc_mem_size = (DWORD*)0x4D3018;
 
     p_wc4_window_has_focus = (BOOL*)0x4DC36C;
 

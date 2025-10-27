@@ -191,6 +191,8 @@ struct CAMERA_CLASS_01 {
 
 void WC4W_Setup();
 
+extern DWORD* p_wc4_virtual_alloc_mem_size;
+
 extern char* p_wc4_szAppName;
 extern HINSTANCE* pp_hinstWC4W;
 
