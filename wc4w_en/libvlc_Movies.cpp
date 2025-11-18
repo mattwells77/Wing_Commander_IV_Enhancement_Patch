@@ -22,29 +22,10 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "pch.h"
 
-#include "movies_vlclib.h"
+#include "libvlc_Movies.h"
 #include "configTools.h"
 #include "wc4w.h"
 
-//#include <iostream>
-//#include <thread>
-//#include <cstring>
-//using namespace VLC;
-
-/*const char* const vlc_options[] = {
-    "--file-caching=300"//,
-    //"--network-caching=150",
-    //"--clock-jitter=0",
-    //"--live-caching=150",
-    //"--clock-synchro=0",
-    //"-vvv",
-    //"--drop-late-frames",
-    //"--skip-frames"
-     };*/
-//const char* const vlc_options[] = { "--freetype-font=Incised901 Lt BT" };
-
-//VLC::Instance vlc_instance = VLC::Instance(_countof(vlc_options), vlc_options);
-VLC::Instance vlc_instance = VLC::Instance(0, nullptr);
 
 std::string movie_dir;
 std::string movie_ext;
@@ -60,6 +41,7 @@ SCALE_TYPE inflight_display_aspect_type = SCALE_TYPE::fit;
 //DWORD inflight_cockpit_bg_colour_argb = 0xFF000000;
 
 LibVlc_MovieInflight* pMovie_vlc_Inflight = nullptr;
+
 
 //____________________________________________________________________________________
 static BOOL Create_Movie_Path_Inflight(const char* movie_name, std::string* p_retPath) {

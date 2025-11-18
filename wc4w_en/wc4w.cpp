@@ -24,6 +24,8 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "wc4w.h"
 
+MUSIC_CLASS* wc4_music_class = nullptr;
+
 DWORD* p_wc4_virtual_alloc_mem_size = nullptr;
 
 char* p_wc4_szAppName = nullptr;
@@ -94,6 +96,7 @@ LONG* p_wc4_joy_y = nullptr;
 LONG* p_wc4_joy_throttle_pos = nullptr;
 
 LONG* p_wc4_ambient_music_volume = nullptr;
+LONG* p_wc4_music_volume_current = nullptr;
 
 BYTE* p_wc4_is_sound_enabled = nullptr;
 void* p_wc4_audio_class = nullptr;
@@ -122,7 +125,7 @@ void* p_wc4_play_inflight_hr_movie_return_address = nullptr;
 
 void* p_wc4_mouse_struct = nullptr;
 
-void** pp_wc4_music_thread_class = nullptr;
+MUSIC_CLASS** pp_wc4_music_thread_class = nullptr;
 void(__thiscall* wc4_music_thread_class_destructor)(void*) = nullptr;
 
 void(*wc4_dealocate_mem01)(void*) = nullptr;
@@ -179,7 +182,10 @@ bool* p_wc4_movie_halt_flag = nullptr;
 
 DWORD* p_wc4_movie_frame_count = nullptr;
 
-BOOL(__thiscall* wc4_load_file_handle)(void*, BOOL print_error_flag, BOOL unknown_flag) = nullptr;
+void(__thiscall* wc4_file_init)(void*) = nullptr;
+BOOL(__thiscall* wc4_file_load)(void*, char* path, DWORD dwDesiredAccess, BOOL halt_on_create_file_error, DWORD dwFlagsAndAttributes) = nullptr;
+BOOL(__thiscall* wc4_file_close)(void*) = nullptr;
+size_t(__thiscall* wc4_file_read)(void*, BYTE* buff, size_t len) = nullptr;
 LONG(*wc4_find_file_in_tre)(char* pfile_name) = nullptr;
 
 void (*wc4_copy_rect)(DRAW_BUFFER_MAIN* p_fromBuff, LONG from_x, LONG from_y, DRAW_BUFFER_MAIN* p_toBuff, LONG to_x, LONG to_y, DWORD pal_offset) = nullptr;
@@ -270,7 +276,7 @@ void WC4W_Setup() {
     p_wc4_joy_throttle_pos = (LONG*)0x4B777C;
     p_wc4_joy_pov = (DWORD*)0x4B7778;
 
-    pp_wc4_music_thread_class = (void**)0x4C269C;
+    pp_wc4_music_thread_class = (MUSIC_CLASS**)0x4C269C;
     wc4_music_thread_class_destructor = (void(__thiscall*)(void*))0x444450;
 
     wc4_dealocate_mem01 = (void(*)(void*))0x48C9E0;
@@ -335,7 +341,11 @@ void WC4W_Setup() {
 
     wc4_nav_screen_update_position = (void(__thiscall*)(void*))0x444900;
 
-    wc4_load_file_handle = (BOOL(__thiscall*)(void*, BOOL, BOOL))0x489730;
+    wc4_file_init = (void(__thiscall*)(void*))0x489E50;
+    wc4_file_load = (BOOL(__thiscall*)(void*, char* path, DWORD, BOOL, DWORD))0x489730;
+    wc4_file_close = (BOOL(__thiscall*)(void*))0x489840;
+    wc4_file_read = (size_t(__thiscall*)(void*, BYTE*, size_t))0x489960;
+
     wc4_find_file_in_tre = (LONG(*)(char*))0x48B950;
 
     p_wc4_frequency = (LARGE_INTEGER*)0x4C4938;
@@ -353,6 +363,7 @@ void WC4W_Setup() {
     wc4_set_music_volume = (void(__thiscall*)(void*, LONG))0x45EA70;
 
     p_wc4_ambient_music_volume = (LONG*)0x4BD220;
+    p_wc4_music_volume_current = (LONG*)0x4B6450;
     p_wc4_is_sound_enabled = (BYTE*)0x4C2684;
     p_wc4_audio_class = (void*)0x4C4204;
 
@@ -456,7 +467,7 @@ void WC4W_Setup() {
     p_wc4_joy_throttle_pos = (LONG*)0x4DC344;
     p_wc4_joy_pov = (DWORD*)0x4DC33C;
 
-    pp_wc4_music_thread_class = (void**)0x4D961C;
+    pp_wc4_music_thread_class = (MUSIC_CLASS**)0x4D961C;
     wc4_music_thread_class_destructor = (void(__thiscall*)(void*))0x487F20;
 
     wc4_dealocate_mem01 = (void(*)(void*))0x4AF1EF;
@@ -521,7 +532,11 @@ void WC4W_Setup() {
 
     wc4_nav_screen_update_position = (void(__thiscall*)(void*))0x41C340;
   
-    wc4_load_file_handle = (BOOL(__thiscall*)(void*, BOOL, BOOL))0x49AA80;
+    wc4_file_init = (void(__thiscall*)(void*))0x49C910;
+    wc4_file_load = (BOOL(__thiscall*)(void*, char* path, DWORD, BOOL, DWORD))0x49AA80;
+    wc4_file_close = (BOOL(__thiscall*)(void*))0x49AB90;
+    wc4_file_read = (size_t(__thiscall*)(void*, BYTE*, size_t))0x49ACD0;
+
     wc4_find_file_in_tre = (LONG(*)(char*))0x49B5B0;
 
     p_wc4_frequency = (LARGE_INTEGER*)0x4C01D8;
@@ -539,6 +554,7 @@ void WC4W_Setup() {
     wc4_set_music_volume = (void(__thiscall*)(void*, LONG))0x4867D0;
 
     p_wc4_ambient_music_volume = (LONG*)0x4C1A98;
+    p_wc4_music_volume_current = (LONG*)0x4D9638;
     p_wc4_is_sound_enabled = (BYTE*)0x4D95E4;
     p_wc4_audio_class = (void*)0x4B8024;
 

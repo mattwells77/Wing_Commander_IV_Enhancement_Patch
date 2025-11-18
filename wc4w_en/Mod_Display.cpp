@@ -26,7 +26,8 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "modifications.h"
 #include "memwrite.h"
 #include "configTools.h"
-#include "movies_vlclib.h"
+#include "libvlc_Movies.h"
+#include "libvlc_Music.h"
 #include "wc4w.h"
 #include "joystick_config.h"
 
@@ -1324,6 +1325,8 @@ static BOOL WinProc_Main(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
                 pMovie_vlc->Pause(true);
             if (pMovie_vlc_Inflight)
                 pMovie_vlc_Inflight->Pause(true);
+            if (p_Music_Player)
+                p_Music_Player->Pause(true);
         }
         else {
             Debug_Info("WM_ACTIVATEAPP true");
@@ -1336,6 +1339,8 @@ static BOOL WinProc_Main(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
                 pMovie_vlc->Pause(false);
             if (pMovie_vlc_Inflight)
                 pMovie_vlc_Inflight->Pause(false);
+            if (p_Music_Player)
+                p_Music_Player->Pause(false);
         }
         return 0;
         //case WM_ERASEBKGND:
@@ -1445,6 +1450,8 @@ static void Start_Display_Setup(BOOL no_full_screen) {
 
     if(ConfigReadInt(L"MAIN", L"ENABLE_CONTROLLER_ENHANCEMENTS", CONFIG_MAIN_ENABLE_CONTROLLER_ENHANCEMENTS))
         Modifications_Joystick();
+    if (ConfigReadInt(L"MAIN", L"ENABLE_MUSIC_ENHANCEMENTS", CONFIG_MAIN_ENABLE_MUSIC_ENHANCEMENTS))
+        Modifications_Music();
 
     if (no_full_screen)
         *p_wc4_is_windowed = TRUE;
@@ -2288,7 +2295,7 @@ static LONG Inflight_Movie_Audio_Check() {
     //check if the hd movie has audio, and if so lower the volume of the background music while playing.
     if (*p_wc4_inflight_audio_ref == 0 && pMovie_vlc_Inflight && pMovie_vlc_Inflight->HasAudio()) {
         Debug_Info_Movie("Inflight_Movie_Check_Audio HasAudio - volume lowered");
-        LONG audio_vol = *p_wc4_ambient_music_volume - 4;
+        LONG audio_vol = *p_wc4_ambient_music_volume - 30;
         if (audio_vol < 0)
             audio_vol = 0;
         wc4_set_music_volume(p_wc4_audio_class, audio_vol);

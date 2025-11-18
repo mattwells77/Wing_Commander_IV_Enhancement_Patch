@@ -22,14 +22,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
-void Modifications_GeneralFixes();
-void Modifications_Display();
-void Modifications_Joystick();
-void Modifications_ObjectRotation();
-void Modifications_Music();
+#include "vlcpp/vlc.hpp"
 
-void Set_WindowActive_State(BOOL isActive);
 
-#ifndef VERSION_WC4_DVD
-void Music_Class_Destructor();
-#endif
+extern VLC::Instance vlc_instance;

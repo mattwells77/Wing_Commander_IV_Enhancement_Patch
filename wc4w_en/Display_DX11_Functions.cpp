@@ -27,7 +27,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "modifications.h"
 #include "memwrite.h"
 #include "configTools.h"
-#include "movies_vlclib.h"
+#include "libvlc_Movies.h"
 #include "wc4w.h"
 
 using namespace DirectX;
