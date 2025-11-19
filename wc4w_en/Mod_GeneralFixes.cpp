@@ -340,8 +340,8 @@ void Music_Class_Destructor() {
 #endif
 
 
-//________________________________________________
-static void Modify_Object_LOD_Distance(DWORD* LOD) {
+//___________________________________________________________________
+static void Modify_Object_LOD_Distance(DWORD* LOD, FILE_STRUCT* file) {
 
     static int lod_modifier = 100;
     static bool run_once = false;
@@ -356,6 +356,11 @@ static void Modify_Object_LOD_Distance(DWORD* LOD) {
     if (*LOD <= 7)//Ignore values 7 or less. LOD dist 0-7 used by afterburner effect animation.
         return;
 
+    if (strstr(file->path, "ASTRD")) {
+        Debug_Info("Ignoring LOD mod for Asteroid: ASTRD1 & ASTRD2");
+        return;
+    }
+
     if (lod_modifier == 0)
         *LOD = 0;
     else
@@ -369,11 +374,16 @@ static void __declspec(naked) modify_object_lod_dist(void) {
 
     __asm {
         pushad
+#ifdef VERSION_WC4_DVD
+        push ebp
+#else
+        push eax
+#endif
         mov ecx, ebx
         add ecx, 0x30
         push ecx
         call Modify_Object_LOD_Distance
-        add esp, 0x4
+        add esp, 0x8
         popad
         //re-insert original code
 #ifdef VERSION_WC4_DVD
