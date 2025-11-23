@@ -455,14 +455,92 @@ static void __declspec(naked) update_object_turret_rotation(void) {
 #endif
 
 
+//____________________________________________________________________
+static void PC_Rotation_Calulations(void* obj_struct, LONG frame_time) {
+
+    void* ship_properties = ((void**)obj_struct)[1];
+    
+    LONG ship_pitch_modifier = ((LONG*)ship_properties)[1];
+    LONG ship_yaw_modifier = ((LONG*)ship_properties)[2];
+    LONG ship_roll_modifier = ((LONG*)ship_properties)[3];
+
+    LONG raw_pitch = ((LONG*)obj_struct)[26];
+    LONG raw_yaw = ((LONG*)obj_struct)[27];
+    LONG raw_roll = ((LONG*)obj_struct)[28];
+
+    //frame_time represented in units of 256th's of a second.
+    //frame_time = 65536 / (frame_rate * 256);
+    float f_frame_time = frame_time / 256.0f;
+
+    //preform rotation calulations for next rendering.
+    float f_pitch = (float)raw_pitch * ship_pitch_modifier * f_frame_time;
+    float f_yaw = (float)raw_yaw * ship_yaw_modifier * f_frame_time;
+    float f_roll = (float)raw_roll * ship_roll_modifier * f_frame_time;
+
+    //set new rotation offsets for matrix update.
+    ((LONG*)obj_struct)[19] = (LONG)f_pitch; //obj_struct.pitch_axis
+    ((LONG*)obj_struct)[20] = (LONG)f_yaw; //obj_struct.yaw_axis
+    ((LONG*)obj_struct)[21] = (LONG)f_roll; //obj_struct.roll_axis
+}
+
+
+#ifdef VERSION_WC4_DVD
+//_________________________________________________________
+static void __declspec(naked) pc_rotation_calulations(void) {
+
+    __asm {
+        push esi
+        push edi
+
+        push edi
+        push esi
+        call PC_Rotation_Calulations
+        add esp, 0x8
+
+        pop edi
+        pop esi
+        ret
+    }
+}
+
+
+#else
+//_________________________________________________________
+static void __declspec(naked) pc_rotation_calulations(void) {
+
+    __asm {
+        push ebx
+        push ebp
+
+        push ebp
+        push ebx
+
+        call PC_Rotation_Calulations
+        add esp, 0x8
+
+        pop ebp
+        pop ebx
+        ret
+    }
+}
+#endif
+
+
 #ifdef VERSION_WC4_DVD
 //_________________________________
 void Modifications_ObjectRotation() {
 
     //-----Player-Object-rotation-improvements-------------------------------
+    //fix minor drifting due to integer rounding when performing pc rotation calculations.
+    MemWrite16(0x423692, 0x6E8B, 0xE890);
+    FuncWrite32(0x423694, 0x6C5E8B68, (DWORD)&pc_rotation_calulations);
+    //jump over original rotation calculations.
+    MemWrite16(0x423698, 0xF8C1, 0xE990);//JMP 00423834
+    MemWrite32(0x42369A, 0x04FDC104, 0x0196);
+
+    //update object rotation matrix.
     MemWrite16(0x423EF3, 0x4E8B, 0xE890);
     FuncWrite32(0x423EF5, 0x50468D08, (DWORD)&update_object_rotation);
-
     //jump over regular rotation update functions
     MemWrite8(0x423EF9, 0x50, 0xE9);//JMP 00424027
     MemWrite32(0x423EFA, 0xE834C183, 0x0129);
@@ -483,9 +561,16 @@ void Modifications_ObjectRotation() {
 void Modifications_ObjectRotation() {
 
     //-----Player-Object-rotation-improvements-------------------------------
+    //fix minor drifting due to integer rounding when performing pc rotation calculations.
+    MemWrite16(0x454FBC, 0xF8C1, 0xE890);
+    FuncWrite32(0x454FBE, 0x04F9C104, (DWORD)&pc_rotation_calulations);
+    //jump over original rotation calculations.
+    MemWrite16(0x454FC2, 0x4389, 0xE990);//JMP 00455161
+    MemWrite32(0x454FC4, 0x04FFC170, 0x0199);
+
+    //update object rotation matrix.
     MemWrite16(0x455883, 0x438D, 0xE890);
     FuncWrite32(0x455885, 0x084B8B50, (DWORD)&update_object_rotation);
-
     //jump over regular rotation update functions
     MemWrite8(0x455889, 0x50, 0xE9);//JMP 004559D8
     MemWrite32(0x45588A, 0xE834C183, 0x014A);
