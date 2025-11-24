@@ -27,7 +27,14 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "wc4w.h"
 
 #define NUM_TUNES 10
-#define MAX_VOLUME 60
+
+//the original max game volume.
+#define MUSIC_VOLUME_ORI_MAX        63
+//adjusted max volume of the original tunes when played with vlc.
+#define MUSIC_VOLUME_VLC_MAX        75
+//adjusted volume subtraction for comms when played with vlc.
+#define MUSIC_VOLUME_VLC_TALK_SUB   -20
+
 class TUNE_DATA {
 public:
     BYTE* data;
@@ -40,7 +47,7 @@ public:
         len = size;
         pos = 0;
         name = nullptr;
-        max_volume = MAX_VOLUME;
+        max_volume = MUSIC_VOLUME_VLC_MAX;
     }
     ~TUNE_DATA() {
         if (data)

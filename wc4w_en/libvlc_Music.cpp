@@ -25,6 +25,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "libvlc_Music.h"
 #include "configTools.h"
 #include "wc4w.h"
+#include "version.h"
 
 
 LibVlc_Music* p_Music_Player = nullptr;
@@ -43,8 +44,14 @@ static std::string Get_Alt_Tune_Path(const char* tune_name) {
         alt_music_config_path.append(pAltMusicPath);
         alt_music_config_path.append("\\");
         delete[] pAltMusicPath;
-
-        alt_music_config_path.append("wc4w_en_alt_music.ini");
+        
+        size_t len = _countof(VER_PRODUCTNAME_STR);
+        char* s_product_name = new char[len];
+        size_t num_bytes = 0;
+        wcstombs_s(&num_bytes, s_product_name, len, VER_PRODUCTNAME_STR, _TRUNCATE);
+        alt_music_config_path.append(s_product_name);
+        delete[] s_product_name;
+        alt_music_config_path.append("_alt_music.ini");
     }
 
     char* pAltTunePath = new char[MAX_PATH];
@@ -78,7 +85,8 @@ static LONG Get_Alt_Tune_Max_Volume(const char* tune_name) {
 
 //_________________________________________________
 static LONG Calulate_Volume(LONG vol, LONG max_vol) {
-    LONG volume = max_vol * vol / MAX_VOLUME;
+    //adjust the volume level of the tune in relation to the range of the original game volume.
+    LONG volume = max_vol * vol / MUSIC_VOLUME_ORI_MAX;
     if (volume < 0)
         volume = 0;
     else if (volume > 100)
