@@ -33,7 +33,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //adjusted max volume of the original tunes when played with vlc.
 #define MUSIC_VOLUME_VLC_MAX        75
 //adjusted volume subtraction for comms when played with vlc.
-#define MUSIC_VOLUME_VLC_TALK_SUB   -20
+#define MUSIC_VOLUME_VLC_TALK_SUB   20
 
 class TUNE_DATA {
 public:

@@ -171,7 +171,7 @@ void Modifications_Music() {
     MemWrite32(0x4B6450, 0x3C, 63);
     //music volume lowered for comms, original -30.
     //adjusted for vlc for a similar effect to -20.
-    MemWrite8(0x44F0EA, 0xE2, MUSIC_VOLUME_VLC_TALK_SUB);
+    MemWrite8(0x44F0EA, 0xE2, -MUSIC_VOLUME_VLC_TALK_SUB);
 }
 
 #else
@@ -190,5 +190,11 @@ void Modifications_Music() {
     //initialization: jump over xanlib stuff.
     MemWrite16(0x488069, 0x8E8B, 0x7BEB);//JMP SHORT 004880E6
     MemWrite32(0x48806B, 0x98, 0x90909090);
+
+    //music starting value 60, should probably be 63
+    MemWrite32(0x4D9638, 0x3C, 63);
+    //music volume lowered for comms, original -30.
+    //adjusted for vlc for a similar effect to -20.
+    MemWrite8(0x441B68, 0x1E, MUSIC_VOLUME_VLC_TALK_SUB);
 }
 #endif
