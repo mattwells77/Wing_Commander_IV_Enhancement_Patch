@@ -26,7 +26,6 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "Display_DX11.h"
 #include "wc4w.h"
 
-#define NUM_TUNES 10
 
 //the original max game volume.
 #define MUSIC_VOLUME_ORI_MAX        63

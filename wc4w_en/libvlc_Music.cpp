@@ -31,20 +31,20 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 LibVlc_Music* p_Music_Player = nullptr;
 
 
-//_________________________________________________________
-static std::string Get_Alt_Tune_Path(const char* tune_name) {
+//___________________________________________
+static const char* Get_Alt_Music_ConfigPath() {
 
+    static bool config_path_set = false;
     static std::string alt_music_config_path;
-    static bool app_data_path_set = false;
-    if (!app_data_path_set) {
-        alt_music_config_path.clear();
+    if (!config_path_set) {
+        config_path_set = true;
 
         char* pAltMusicPath = new char[MAX_PATH];
         GetCurrentDirectoryA(MAX_PATH, pAltMusicPath);
         alt_music_config_path.append(pAltMusicPath);
         alt_music_config_path.append("\\");
         delete[] pAltMusicPath;
-        
+
         size_t len = _countof(VER_PRODUCTNAME_STR);
         char* s_product_name = new char[len];
         size_t num_bytes = 0;
@@ -52,10 +52,17 @@ static std::string Get_Alt_Tune_Path(const char* tune_name) {
         alt_music_config_path.append(s_product_name);
         delete[] s_product_name;
         alt_music_config_path.append("_alt_music.ini");
+        
     }
+    return alt_music_config_path.c_str();
+}
+
+
+//_________________________________________________________
+static std::string Get_Alt_Tune_Path(const char* tune_name) {
 
     char* pAltTunePath = new char[MAX_PATH];
-    GetPrivateProfileStringA(tune_name, "path", nullptr, pAltTunePath, MAX_PATH, alt_music_config_path.c_str());
+    GetPrivateProfileStringA(tune_name, "path", nullptr, pAltTunePath, MAX_PATH, Get_Alt_Music_ConfigPath());
     std::string s_alt_tune_path = pAltTunePath;
     delete[] pAltTunePath;
 
@@ -66,20 +73,7 @@ static std::string Get_Alt_Tune_Path(const char* tune_name) {
 //________________________________________________________
 static LONG Get_Alt_Tune_Max_Volume(const char* tune_name) {
 
-    static std::string alt_music_config_path;
-    static bool app_data_path_set = false;
-    if (!app_data_path_set) {
-        alt_music_config_path.clear();
-
-        char* pAltMusicPath = new char[MAX_PATH];
-        GetCurrentDirectoryA(MAX_PATH, pAltMusicPath);
-        alt_music_config_path.append(pAltMusicPath);
-        alt_music_config_path.append("\\");
-        delete[] pAltMusicPath;
-
-        alt_music_config_path.append("wc4w_en_alt_music.ini");
-    }
-    return GetPrivateProfileIntA(tune_name, "max_volume", 60, alt_music_config_path.c_str());;
+    return GetPrivateProfileIntA(tune_name, "max_volume", 100, Get_Alt_Music_ConfigPath());
 }
 
 
