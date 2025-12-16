@@ -127,10 +127,10 @@ static BOOL Set_Movie_Settings() {
     if (are_movie_path_setting_set)
         return TRUE;
     
-    char* char_buff = new char[MAX_PATH];
+    char* char_buff = new char[MAX_PATH] {0};
     char* char_ptr = char_buff;
   
-    wchar_t* wchar_buff = new wchar_t[MAX_PATH];
+    wchar_t* wchar_buff = new wchar_t[MAX_PATH] {0};
     size_t num_bytes = 0;
 
     //set the hd movie directory.
