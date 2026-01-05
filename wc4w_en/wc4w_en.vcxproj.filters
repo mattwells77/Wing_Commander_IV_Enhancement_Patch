@@ -143,6 +143,9 @@
     <ClCompile Include="libvlc_Music.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="mouse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

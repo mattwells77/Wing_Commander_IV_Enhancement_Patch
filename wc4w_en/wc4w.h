@@ -302,6 +302,9 @@ extern LONG* p_wc4_joy_y;
 
 extern LONG* p_wc4_joy_throttle_pos;
 
+extern bool* p_wc4_controller_joy;
+extern bool* p_wc4_controller_mouse;
+extern bool* p_wc4_controller_keyboard;
 
 ///extern CRITICAL_SECTION* p_wc4_movie_criticalsection;
 extern void* p_wc4_movie_class;

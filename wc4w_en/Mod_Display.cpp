@@ -44,10 +44,10 @@ LibVlc_Movie* pMovie_vlc = nullptr;
 UINT clientWidth = 0;
 UINT clientHeight = 0;
 
-WORD mouse_state_true[3];
-WORD* p_mouse_button_true = &mouse_state_true[0];
-WORD* p_mouse_x_true = &mouse_state_true[1];
-WORD* p_mouse_y_true = &mouse_state_true[2];
+WORD mouse_state_space[3];
+WORD* p_mouse_button_space = &mouse_state_space[0];
+WORD* p_mouse_x_space = &mouse_state_space[1];
+WORD* p_mouse_y_space = &mouse_state_space[2];
 
 LONG mouse_x_current = 0;
 LONG mouse_y_current = 0;
@@ -1284,7 +1284,7 @@ static BOOL WinProc_Main(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
             is_cursor_clipped = false;
             //Debug_Info("WM_SETCURSOR Mouse Cursor Un-Clipped");
         }
-        if (hWin_JoyConfig)
+        if (hWin_Config_Control)
             break;//dont alter the cursor visibility when joy config window open.
         WORD ht = LOWORD(lParam);
         if (HTCLIENT == ht) {
@@ -1481,11 +1481,18 @@ static void __declspec(naked) start_display_setup(void) {
 static LRESULT Update_Mouse_State(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) {
 
     switch (Message) {
+
     case WM_MOUSEMOVE:
     case WM_LBUTTONDOWN:
     case WM_LBUTTONUP:
     case WM_RBUTTONDOWN:
-    case WM_RBUTTONUP: {
+    case WM_RBUTTONUP:
+    case WM_MBUTTONDOWN:
+    case WM_MBUTTONUP:
+    case WM_XBUTTONDOWN:
+    case WM_XBUTTONUP: {
+        Mouse.Update_Buttons(wParam);
+
         *p_wc4_mouse_button = 0;
         if (wParam & MK_LBUTTON)
             *p_wc4_mouse_button |= 0x1;
@@ -1493,13 +1500,13 @@ static LRESULT Update_Mouse_State(HWND hwnd, UINT Message, WPARAM wParam, LPARAM
             *p_wc4_mouse_button |= 0x2;
         if (wParam & MK_MBUTTON)
             *p_wc4_mouse_button |= 0x4;
-        *p_mouse_button_true = *p_wc4_mouse_button;
+        //*p_mouse_button_true = *p_wc4_mouse_button;
 
         LONG x = GET_X_LPARAM(lParam);
         LONG y = GET_Y_LPARAM(lParam);
 
-        *p_mouse_x_true = (WORD)x;
-        *p_mouse_y_true = (WORD)y;
+        *p_mouse_x_space = (WORD)x;
+        *p_mouse_y_space = (WORD)y;
         if (surface_gui) {
             float fx = 0;
             float fy = 0;
@@ -1528,6 +1535,12 @@ static LRESULT Update_Mouse_State(HWND hwnd, UINT Message, WPARAM wParam, LPARAM
 
         break;
     }
+    case WM_MOUSEWHEEL:
+        Mouse.Update_Wheel_Vertical(wParam);
+        break;
+    case WM_MOUSEHWHEEL:
+        Mouse.Update_Wheel_Horizontal(wParam);
+        break;
     default:
         break;
     }
@@ -1557,14 +1570,14 @@ static BOOL Set_Mouse_Position(LONG x, LONG y) {
             LONG ix = (LONG)fx;
             if ((float)ix != fx)
                 ix++;
-            *p_mouse_x_true = (WORD)ix;
+            *p_mouse_x_space = (WORD)ix;
             ix += client.x;
 
             fy += y * fheight / GUI_HEIGHT;
             LONG iy = (LONG)fy;
             if ((float)iy != fy)
                 iy++;
-            *p_mouse_y_true = (WORD)iy;
+            *p_mouse_y_space = (WORD)iy;
             iy += client.y;
 
             SetCursorPos(ix, iy);
@@ -1606,8 +1619,8 @@ static BOOL Update_Cursor_Position(LONG x, LONG y) {
             x = (m.x - p.x);
             y = (m.y - p.y);
 
-            *p_mouse_x_true = (WORD)x;
-            *p_mouse_y_true = (WORD)y;
+            *p_mouse_x_space = (WORD)x;
+            *p_mouse_y_space = (WORD)y;
 
             if (surface_gui) {
                 float fx = 0;
@@ -1653,7 +1666,7 @@ static WORD* Translate_Messages_Mouse_ClipCursor_Space() {
     clip_cursor = TRUE;
     wc4_translate_messages(TRUE, FALSE);
     clip_cursor = FALSE;
-    return p_mouse_button_true;
+    return p_mouse_button_space;
 }
 
 
@@ -1723,7 +1736,7 @@ static void __declspec(naked) nav_screen_movement_speed_fix(void) {
 static void __declspec(naked) update_space_mouse(void) {
 
     __asm {
-        mov eax, p_mouse_button_true
+        mov eax, p_mouse_button_space
         mov edx, p_wc4_mouse_button_space
         mov ecx, dword ptr ds: [eax]
         mov dword ptr ds: [edx], ecx
@@ -2353,10 +2366,12 @@ static void Fix_Space_Mouse_Movement(void* p_ship_class, LONG* p_x_roll, LONG* p
     if (range > 320)
         range = 320;
 
+    int dead_zone = Mouse.Deadzone();
+
     //apply a small dead zone (320 / 32 = 10).
-    if (x < 10 && x > -10)
+    if (x < dead_zone && x > -dead_zone)
         x = 0;
-    if (y < 10 && y > -10)
+    if (y < dead_zone && y > -dead_zone)
         y = 0;
 
     if (x > range)

@@ -29,6 +29,7 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define JOYSTICK_PROFILE_VERSION	2
 #define JOYSTICK_CONFIG_PATH			L"controllers"
 
+#define NUM_MOUSE_BUTTONS	5
 
 enum class WC4_ACTIONS {
 	None,
@@ -144,6 +145,27 @@ enum class SWITCH_POS {
 };
 
 
+//____________________
+class ACTION_KEY_MOUSE {
+public:
+	ACTION_KEY_MOUSE() {
+		button = WC4_ACTIONS::None;
+		pressed = false;
+	};
+	bool Is_Pressed() const { return pressed; };
+	void SetAction(WC4_ACTIONS wc3_action) {
+		button = wc3_action;
+	};
+	bool SetButton(bool new_state);
+	void SetButton_Instant() const;
+	WC4_ACTIONS GetAction() const { return button; };
+protected:
+private:
+	WC4_ACTIONS button;
+	bool pressed;
+};
+
+
 //______________
 class ACTION_KEY {
 public:
@@ -162,6 +184,7 @@ private:
 	WC4_ACTIONS button;
 	bool pressed;
 };
+
 
 class AXIS_LIMITS {
 public:
@@ -434,6 +457,60 @@ private:
 };
 
 
+//_________
+class MOUSE {
+public:
+	MOUSE() {
+		setup = false;
+		deadzone_level = 0;
+		deadzone = 0;
+
+	};
+	~MOUSE() {
+
+	}
+	void Setup();
+	void Load();
+	void Save();
+	void Update_Buttons(WPARAM wParam);
+	void Update_Button(int button, bool state);
+	void Update_Wheel_Vertical(WPARAM wParam);
+	void Update_Wheel_Horizontal(WPARAM wParam);
+	void Set_Deadzone_Level(int in_deadzone_level) {
+		if (in_deadzone_level < 0)
+			in_deadzone_level = 0;
+		if (in_deadzone_level > 10)
+			in_deadzone_level = 10;
+		deadzone_level = in_deadzone_level;
+		deadzone = deadzone_level * 10;
+	};
+	int Deadzone_Level() const { return deadzone_level; };
+	int Deadzone() const { return deadzone; };
+
+	WC4_ACTIONS GetAction_Button(int button);
+	WC4_ACTIONS GetAction_Wheel_Up();
+	WC4_ACTIONS GetAction_Wheel_Down();
+	WC4_ACTIONS GetAction_Wheel_Left();
+	WC4_ACTIONS GetAction_Wheel_Right();
+
+	void SetAction_Button(int button, WC4_ACTIONS action);
+	void SetAction_Wheel_Up(WC4_ACTIONS action);
+	void SetAction_Wheel_Down(WC4_ACTIONS action);
+	void SetAction_Wheel_Left(WC4_ACTIONS action);
+	void SetAction_Wheel_Right(WC4_ACTIONS action);
+	//bool IsButton_Pressed(int button) { return action_key_button[button].Is_Pressed(); };
+protected:
+private:
+	ACTION_KEY_MOUSE action_key_button[NUM_MOUSE_BUTTONS];
+	ACTION_KEY_MOUSE action_key_wheel_v[2];
+	ACTION_KEY_MOUSE action_key_wheel_h[2];
+
+	bool setup;
+	int deadzone_level;
+	int deadzone;
+};
+
+
 struct WC4_JOY_AXES {
 	double x;
 	double y;
@@ -462,3 +539,7 @@ extern JOYSTICKS Joysticks;
 
 
 bool Get_Joystick_Config_Path(std::wstring* p_ret_string);
+
+
+extern MOUSE Mouse;
+extern WORD mouse_state_space[3];

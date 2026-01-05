@@ -95,6 +95,10 @@ LONG* p_wc4_joy_y = nullptr;
 
 LONG* p_wc4_joy_throttle_pos = nullptr;
 
+bool* p_wc4_controller_joy = nullptr;
+bool* p_wc4_controller_mouse = nullptr;
+bool* p_wc4_controller_keyboard = nullptr;
+
 LONG* p_wc4_ambient_music_volume = nullptr;
 LONG* p_wc4_music_volume_current = nullptr;
 
@@ -275,6 +279,10 @@ void WC4W_Setup() {
 
     p_wc4_joy_throttle_pos = (LONG*)0x4B777C;
     p_wc4_joy_pov = (DWORD*)0x4B7778;
+
+    p_wc4_controller_joy = (bool*)0x4B4684;
+    p_wc4_controller_mouse = (bool*)0x4BD208;
+    p_wc4_controller_keyboard = (bool*)0x4BD20C;
 
     pp_wc4_music_thread_class = (MUSIC_CLASS**)0x4C269C;
     wc4_music_thread_class_destructor = (void(__thiscall*)(void*))0x444450;
@@ -466,6 +474,10 @@ void WC4W_Setup() {
 
     p_wc4_joy_throttle_pos = (LONG*)0x4DC344;
     p_wc4_joy_pov = (DWORD*)0x4DC33C;
+
+    p_wc4_controller_joy = (bool*)0x4D58D8;
+    p_wc4_controller_mouse = (bool*)0x4D58DC;
+    p_wc4_controller_keyboard = (bool*)0x4D58E0;
 
     pp_wc4_music_thread_class = (MUSIC_CLASS**)0x4D961C;
     wc4_music_thread_class_destructor = (void(__thiscall*)(void*))0x487F20;
