@@ -499,6 +499,10 @@ static void __declspec(naked) pc_rotation_calulations(void) {
 
         pop edi
         pop esi
+
+        mov eax, dword ptr ds : [esi + 0x68]//pitch
+        mov dword ptr ss : [esp + 0x1C], eax
+        mov ebp, dword ptr ds : [esi + 0x6C]//yaw
         ret
     }
 }
@@ -520,6 +524,9 @@ static void __declspec(naked) pc_rotation_calulations(void) {
 
         pop ebp
         pop ebx
+
+        mov esi, dword ptr ds : [ebx + 0x68]//pitch
+        mov edi, dword ptr ds : [ebx + 0x6C]//yaw
         ret
     }
 }
