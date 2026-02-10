@@ -353,6 +353,7 @@ extern void* p_wc4_play_inflight_hr_movie_return_address;
 
 extern void* p_wc4_mouse_struct;
 
+extern BOOL(*wc4_draw_circle)(DRAW_BUFFER_MAIN* p_toBuff, LONG x, LONG y, DWORD width, DWORD height, DWORD pal_offset);
 
 extern void(__thiscall* wc4_draw_hud_targeting_elements)(void*);
 extern void(__thiscall* wc4_draw_hud_view_text)(void*);

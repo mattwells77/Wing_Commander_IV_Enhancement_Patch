@@ -965,6 +965,26 @@ static void __declspec(naked) draw_hud_targeting_elements(void) {
 }
 
 
+//_________________________________________________________________________________________________________________________________________
+static BOOL Draw_HUD_Tractor_Beam_Targeting_Circle(DRAW_BUFFER_MAIN* p_toBuff, LONG x, LONG y, DWORD width, DWORD height, DWORD pal_offset) {
+    
+    Lock_3DSpace_Surface();
+
+    //fix width and height of tractor circle.
+    float length = (float)spaceHeight;
+    if (spaceWidth < spaceHeight)
+        length = (float)spaceWidth;
+    width = (LONG)(length / 480.0f * width);
+    height = (LONG)(length / 480.0f * height);
+
+    BOOL ret_val = wc4_draw_circle(p_toBuff, x, y, width, height, pal_offset);
+
+    UnLock_3DSpace_Surface();
+
+    return ret_val;
+}
+
+
 //___________________________________________
 static LONG Fix_Hud_Targeting_Rect_Max_Size() {
 
@@ -2583,6 +2603,9 @@ void Modifications_Display() {
     //draw targeting elements to 3d space
     FuncReplace32(0x40EB5E, 0x05C4BE, (DWORD)&draw_hud_targeting_elements);
 
+    //draw tractor beam targeting circle to 3D space
+    FuncReplace32(0x40ED0F, 0x080ED5, (DWORD)&Draw_HUD_Tractor_Beam_Targeting_Circle);
+
     //fix the max size of targeting rect to match the ratio between it and the original screen size.
     MemWrite8(0x46C06D, 0xBA, 0xE8);
     FuncWrite32(0x46C06E, 0x1C, (DWORD)&fix_hud_targeting_rect_max_size);
@@ -2881,6 +2904,9 @@ void Modifications_Display() {
 
     //draw targeting elements to 3d space
     FuncReplace32(0x420981, 0x540B, (DWORD)&draw_hud_targeting_elements);
+
+    //draw tractor beam targeting circle to 3D space
+    FuncReplace32(0x420B58, 0x06A9C4, (DWORD)&Draw_HUD_Tractor_Beam_Targeting_Circle);
 
     //fix the max size of targeting rect to match the ratio between it and the original screen size.
     MemWrite8(0x427018, 0xBA, 0xE8);

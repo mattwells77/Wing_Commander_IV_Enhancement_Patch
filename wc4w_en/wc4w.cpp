@@ -139,6 +139,7 @@ void(*wc4_update_input_states)() = nullptr;
 
 BYTE* p_wc4_key_pressed_scancode = nullptr;
 
+BOOL(*wc4_draw_circle)(DRAW_BUFFER_MAIN* p_toBuff, LONG x, LONG y, DWORD width, DWORD height, DWORD pal_offset) = nullptr;
 
 void(__thiscall* wc4_draw_hud_targeting_elements)(void*) = nullptr;
 void(__thiscall* wc4_draw_hud_view_text)(void*) = nullptr;
@@ -340,6 +341,7 @@ void WC4W_Setup() {
 
     wc4_draw_choice_text_buff = (void(*)(void*, BYTE*, DWORD))0x469110;
 
+    wc4_draw_circle = (BOOL(*)(DRAW_BUFFER_MAIN*, LONG, LONG, DWORD, DWORD, DWORD))0x48FBE8;
 
     wc4_draw_hud_targeting_elements = (void(__thiscall*)(void*))0x46B020;
 
@@ -535,6 +537,7 @@ void WC4W_Setup() {
 
     wc4_draw_choice_text_buff = (void(*)(void*, BYTE*, DWORD))0x485260;
 
+    wc4_draw_circle = (BOOL(*)(DRAW_BUFFER_MAIN*, LONG, LONG, DWORD, DWORD, DWORD))0x48B520;
 
     wc4_draw_hud_targeting_elements = (void(__thiscall*)(void*))0x425D90;
 
