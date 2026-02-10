@@ -990,6 +990,8 @@ void LibVlc_MovieInflight::SetMedia(std::string path) {
 //___________________________________________
 void LibVlc_MovieInflight::Initialise_Audio() {
 
+    mediaPlayer.setVolume(100);
+
 #if LIBVLC_VERSION_INT >= LIBVLC_VERSION(4, 0, 0, 0)
     VLC::MediaPtr media_p = mediaPlayer.media();
     //libvlc_media_parse_request(vlc_instance, *media_p, libvlc_media_parse_local, -1);
@@ -1026,6 +1028,7 @@ void LibVlc_MovieInflight::Initialise_Audio() {
         if (name.find(language) != std::string::npos) {
             Debug_Info_Movie("LibVlc_Movie: Audio track selected ID: %d, name: %s", p_track->i_id, name.c_str());
             libvlc_media_player_select_track(mediaPlayer, p_track);
+            break;
         }
 
     }
@@ -1038,6 +1041,7 @@ void LibVlc_MovieInflight::Initialise_Audio() {
         if (description.name().find(language) != std::string::npos) {
             Debug_Info_Movie("LibVlc_Movie: Audio track selected ID: %d, name: %s", description.id(), description.name().c_str());
             mediaPlayer.setAudioTrack(description.id());
+            break;
         }
     }
 #endif
