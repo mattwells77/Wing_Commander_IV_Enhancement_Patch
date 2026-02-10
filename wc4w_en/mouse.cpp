@@ -113,6 +113,13 @@ WORD WC3_ACTIONS_KEYS_MOUSE[][2]{
 
 	0x00, 0x23,		// Toggle_Normal_Special_Guns
 	0x00, 0x16,		// Lock_Closest_Enemy
+
+	0x38, 0x30,		// WingMan_Break_And_Attack,
+	0x38, 0x21,		// WingMan_Form_On_Wing,
+	0x38, 0x20,		// WingMan_Request_Status,
+	0x38, 0x23,		// WingMan_Help_Me_Out,
+	0x38, 0x1E,		// WingMan_Attack_My_Target,
+	0x38, 0x14,		// Enemy_Taunt,
 };
 
 

@@ -110,6 +110,13 @@ enum class WC4_ACTIONS {
 	Disable_Video_In_Left_VDU,// 	Ctrl - V
 	Toggle_Normal_Special_Guns,//	H
 	Lock_Closest_Enemy,//	U
+
+	WingMan_Break_And_Attack,//Alt - B
+	WingMan_Form_On_Wing,//Alt - F
+	WingMan_Request_Status,//Alt - D
+	WingMan_Help_Me_Out,//Alt - H
+	WingMan_Attack_My_Target,//Alt - A
+	Enemy_Taunt,//Alt - T
 };
 
 
