@@ -136,6 +136,10 @@ static void ConfigCreate() {
     ConfigWriteInt(L"MAIN", L"VIRTUAL_MEM_SIZE", CONFIG_MAIN_VIRTUAL_MEM_SIZE);
     ConfigWriteInt(L"MAIN", L"NUM_WATCHERS_OVERIDE", CONFIG_MAIN_NUM_WATCHERS_OVERIDE);
 
+    ConfigWriteInt(L"MAIN", L"WINDOWED", CONFIG_MAIN_WINDOWED);
+    ConfigWriteInt(L"MAIN", L"DEAD_ZONE", CONFIG_MAIN_DEAD_ZONE);
+
+
     ConfigWriteInt(L"SPACE", L"SPACE_REFRESH_RATE_HZ", CONFIG_SPACE_SPACE_REFRESH_RATE_HZ);
     ConfigWriteInt(L"SPACE", L"NAV_SCREEN_KEY_RESPONSE_HZ", CONFIG_SPACE_NAV_SCREEN_KEY_RESPONSE_HZ);
     ConfigWriteInt(L"SPACE", L"LOD_LEVEL_DISTANCE_MODIFIER", CONFIG_SPACE_LOD_LEVEL_DISTANCE_MODIFIER);
@@ -143,11 +147,12 @@ static void ConfigCreate() {
     ConfigWriteInt(L"SPACE", L"IS_SPACE_SCALED", CONFIG_SPACE_IS_SPACE_SCALED);
     ConfigWriteInt(L"SPACE", L"SCALED_SPACE_HEIGHT", CONFIG_SPACE_SCALED_SPACE_HEIGHT);
 
+
     ConfigWriteInt(L"MOVIES", L"SHOW_ORIGINAL_MOVIES_INTERLACED", CONFIG_MOVIES_SHOW_ORIGINAL_INTERLACED);
     ConfigWriteString(L"MOVIES", L"PATH", CONFIG_MOVIES_PATH);
     ConfigWriteString(L"MOVIES", L"EXT", CONFIG_MOVIES_EXT);
     ConfigWriteInt(L"MOVIES", L"BRANCH_OFFSET_MS", CONFIG_MOVIES_BRANCH_OFFSET_MS);
-
+    
     //ConfigWriteInt("MOVIES", "INFLIGHT_USE_AUDIO_FROM_FILE_IF_PRESENT", CONFIG_MOVIES_INFLIGHT_USE_AUDIO_FROM_FILE_IF_PRESENT);
     //ConfigWriteInt("MOVIES", "INFLIGHT_DISPLAY_ASPECT_TYPE", CONFIG_MOVIES_INFLIGHT_DISPLAY_ASPECT_TYPE);
     //ConfigWriteInt("MOVIES", "INFLIGHT_COCKPIT_BG_COLOUR_RGB", CONFIG_MOVIES_INFLIGHT_COCKPIT_BG_COLOUR_RGB);
@@ -155,6 +160,18 @@ static void ConfigCreate() {
     //ConfigWriteInt("MOVIES", "INFLIGHT_MONO_SHADER_COLOUR", CONFIG_INFLIGHT_MONO_SHADER_COLOUR);
     //ConfigWriteInt("MOVIES", "INFLIGHT_MONO_SHADER_BRIGHTNESS", CONFIG_INFLIGHT_MONO_SHADER_BRIGHTNESS);
     //ConfigWriteInt("MOVIES", "INFLIGHT_MONO_SHADER_CONTRAST", CONFIG_INFLIGHT_MONO_SHADER_CONTRAST);
+
+
+    ConfigWriteInt(L"MOUSE", L"DEAD_ZONE", CONFIG_MOUSE_DEAD_ZONE);
+    ConfigWriteInt(L"MOUSE", L"BUTTON_01", CONFIG_MOUSE_BUTTON_01);
+    ConfigWriteInt(L"MOUSE", L"BUTTON_02", CONFIG_MOUSE_BUTTON_02);
+    ConfigWriteInt(L"MOUSE", L"BUTTON_03", CONFIG_MOUSE_BUTTON_03);
+    ConfigWriteInt(L"MOUSE", L"BUTTON_04", CONFIG_MOUSE_BUTTON_04);
+    ConfigWriteInt(L"MOUSE", L"BUTTON_05", CONFIG_MOUSE_BUTTON_05);
+    ConfigWriteInt(L"MOUSE", L"MOUSE_WHEEL_UP", CONFIG_MOUSE_WHEEL_UP);
+    ConfigWriteInt(L"MOUSE", L"MOUSE_WHEEL_DOWN", CONFIG_MOUSE_WHEEL_DOWN);
+    ConfigWriteInt(L"MOUSE", L"MOUSE_WHEEL_LEFT", CONFIG_MOUSE_WHEEL_LEFT);
+    ConfigWriteInt(L"MOUSE", L"MOUSE_WHEEL_RIGHT", CONFIG_MOUSE_WHEEL_RIGHT);
 
 
     //ConfigWriteInt(L"DEBUG", L"ERRORS", 1);
@@ -252,6 +269,8 @@ UINT ConfigReadInt(const wchar_t* lpAppName, const wchar_t* lpKeyName, int nDefa
 
 //_________________________________________________________________________________________
 UINT ConfigReadInt_InGame(const wchar_t* lpAppName, const wchar_t* lpKeyName, int nDefault) {
+    
+    nDefault = ConfigReadInt(lpAppName, lpKeyName, nDefault);// check for defaults in main ini file;
     return GetPrivateProfileInt(lpAppName, lpKeyName, nDefault, Get_ConfigPath_InGame());
 }
 
