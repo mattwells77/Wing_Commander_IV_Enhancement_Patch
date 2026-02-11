@@ -434,11 +434,11 @@ static void __declspec(naked) fix_audio_data_size(void) {
 }
 
 
-//________________________________________________________________________________________________________________
-static void Display_Debug_Info_1(DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, DWORD unk2) {
+//_________________________________________________________________________________________________________________________
+static void Display_Debug_Info_1(DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, BYTE* p_pal_offsets) {
     
     y = (*pp_wc4_db_game_main)->rc.top + 4;
-    wc4_draw_text_to_buff(p_toBuff, x, y, unk1, text_buff, unk2);
+    wc4_draw_text_to_buff(p_toBuff, x, y, unk1, text_buff, p_pal_offsets);
     
     if (!*pp_wc4_music_thread_class)
         return;
@@ -446,11 +446,11 @@ static void Display_Debug_Info_1(DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD 
 
     sprintf_s(text_buff, 240, "Requested Tune: %d", p_music_data[3]);
     y += 10;
-    wc4_draw_text_to_buff(p_toBuff, x, y, unk1, text_buff, unk2);
+    wc4_draw_text_to_buff(p_toBuff, x, y, unk1, text_buff, p_pal_offsets);
 
     sprintf_s(text_buff, 240, "Current Tune: %d", p_music_data[1]);
     y += 10;
-    wc4_draw_text_to_buff(p_toBuff, x, y, unk1, text_buff, unk2);
+    wc4_draw_text_to_buff(p_toBuff, x, y, unk1, text_buff, p_pal_offsets);
     
 
 
@@ -552,6 +552,176 @@ static void __declspec(naked) num_watchers_overide(void) {
 }
 
 
+//_____________________________________________
+static void Proccess_Object(DWORD** func_array) {
+    static int count = 0;
+    Debug_Info("Proccess_Object: %d, func:%X", count, func_array[1]);
+
+    count++;
+}
+
+
+//________________________________
+static void Proccess_Object_Pass() {
+    static int count = 0;
+    Debug_Info("Proccess_Object PASSED: %d", count);
+
+    count++;
+}
+
+
+//__________________________________________________
+static void __declspec(naked) processes_object(void) {
+
+    __asm {
+        mov ebx, dword ptr ds : [eax]
+
+        pushad
+        push ebx
+        call Proccess_Object
+        add esp, 0x4
+        popad
+
+
+        mov ecx, eax
+        call dword ptr ds : [ebx + 0x4]
+
+        //pushad
+        //call Proccess_Object_Pass
+        //popad
+
+        ret
+
+    }
+}
+
+
+LONG vdu_comms_selected_line = 0;
+BOOL vdu_comms_had_focus = FALSE;
+
+//________________________________
+static LONG VDU_Comms_Check_Keys() {
+
+    LONG key = (LONG)*p_wc4_key_scancode;
+
+    switch (key) {
+    case 0x2E://'C'
+        if (vdu_comms_had_focus)
+            vdu_comms_selected_line++;
+        if (vdu_comms_selected_line >= *p_wc4_vdu_comms_list_size)
+            vdu_comms_selected_line = 0;
+        //Debug_Info("Num Comms: %d %d", comms_lst_current, num_options);
+        break;
+
+    case 1://esc
+        vdu_comms_selected_line = 0;
+        break;
+    case 2://1
+    case 3://2
+    case 4://3
+    case 5://4
+    case 6://5
+    case 7://6
+    case 8://7
+    case 9://8
+    case 10://9
+        if (key - 2 >= *p_wc4_vdu_comms_list_size)
+            vdu_comms_selected_line = 0;
+        break;
+    case 0x1B:
+        key = vdu_comms_selected_line + 2;
+        if (vdu_comms_selected_line > 0)
+            vdu_comms_selected_line = 0;
+        break;
+    case 0x1A:
+        key = 1;
+        vdu_comms_selected_line = 0;
+        break;
+    default:
+        break;
+    }
+
+    vdu_comms_had_focus = TRUE;
+    return key;
+}
+
+
+//______________________________________________________
+static void __declspec(naked) vdu_comms_check_keys(void) {
+
+    __asm {
+        push edx
+        push ebx
+        push edi
+        push esi
+        push ebp
+        push eax
+
+        call VDU_Comms_Check_Keys
+        mov ecx, eax
+
+        pop eax
+        pop ebp
+        pop esi
+        pop edi
+        pop ebx
+        pop edx
+
+        ret
+    }
+}
+
+
+//____________________________________________________________________________________________________________________________________________
+static void VDU_Comms_Draw_Menu_Text(LONG line_num, DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, BYTE* p_pal_offsets) {
+
+    //highlight menu text if line is selected.
+    if (line_num - 1 == vdu_comms_selected_line)
+        p_pal_offsets = p_wc4_pal_offsets_10;
+    wc4_draw_text_to_buff(p_toBuff, x, y, unk1, text_buff, p_pal_offsets);
+}
+
+
+//__________________________________________________________
+static void __declspec(naked) vdu_comms_draw_menu_text(void) {
+
+    __asm {
+        push[esp + 0x18]
+        push[esp + 0x18]
+        push[esp + 0x18]
+        push[esp + 0x18]
+        push[esp + 0x18]
+        push[esp + 0x18]
+#ifdef VERSION_WC4_DVD
+        push edi
+#else
+        push ebp
+#endif
+        call VDU_Comms_Draw_Menu_Text
+        add esp, 0x1C
+
+        ret
+    }
+}
+
+
+//______________________________________________________________
+static void __declspec(naked) vdu_check_if_comms_had_focus(void) {
+
+    __asm {
+        mov eax, p_wc4_vdu_focus
+        mov al, byte ptr ds:[eax]
+        cmp al , 0x4 //4 == comms
+        je exit_func
+
+        mov vdu_comms_had_focus, FALSE
+        exit_func :
+
+        ret
+    }
+}
+
+
 #ifdef VERSION_WC4_DVD
 //_______________________________
 void Modifications_GeneralFixes() {
@@ -622,6 +792,19 @@ void Modifications_GeneralFixes() {
     //Increase the max number of watchers at a nav point. (max number of active ships and turrets)
     MemWrite8(0x481EE5, 0x8B, 0xE8);
     FuncWrite32(0x481EE6, 0x044689F1, (DWORD)&num_watchers_overide);
+
+
+    //-----scrollable comms------------------------------------------------
+    MemWrite8(0x40F2E8, 0xA1, 0xE8);
+    FuncWrite32(0x40F2E9, 0x4BBAE0, (DWORD)&vdu_check_if_comms_had_focus);
+
+    MemWrite16(0x40FC6E, 0x0D8B, 0xE890);
+    FuncWrite32(0x40FC70, 0x4C4188, (DWORD)&vdu_comms_check_keys);
+    //0x2D == key 'C' - 1// allow for 'C' key to be used as menu selector
+    MemWrite8(0x40FC79, 0x2D, 0x2C);
+
+    FuncReplace32(0x411251, 0x080154, (DWORD)&vdu_comms_draw_menu_text);
+    //---------------------------------------------------------------------
 }
 
 #else
@@ -709,5 +892,23 @@ void Modifications_GeneralFixes() {
     //Increase the max number of watchers at a nav point. (max number of active ships and turrets)
     MemWrite8(0x4A14B5, 0x89, 0xE8);
     FuncWrite32(0x4A14B6, 0xF18B0441, (DWORD)&num_watchers_overide);
+
+
+    //MemWrite8(0x4A1BB2, 0x8B, 0xE8);
+    //FuncWrite32(0x4A1BB3, 0xFFC88B18, (DWORD)&processes_object);
+    //MemWrite16(0x4A1BB7, 0x0453, 0x9090);
+
+
+    //-----scrollable comms------------------------------------------------
+    MemWrite8(0x427288, 0xA0, 0xE8);
+    FuncWrite32(0x427289, 0x4C1244, (DWORD)&vdu_check_if_comms_had_focus);
+
+    MemWrite16(0x427CBD, 0x0D8B, 0xE890);
+    FuncWrite32(0x427CBF, 0x4C0660, (DWORD)&vdu_comms_check_keys);
+    //0x2D == key 'C' - 1// allow for 'C' key to be used as menu selector
+    MemWrite8(0x427CC8, 0x2D, 0x2C);//done
+
+    FuncReplace32(0x425BA9, 0x067134, (DWORD)&vdu_comms_draw_menu_text);
+    //---------------------------------------------------------------------
 }
 #endif

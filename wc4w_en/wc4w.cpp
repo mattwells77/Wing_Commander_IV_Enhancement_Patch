@@ -183,6 +183,20 @@ LONG* p_wc4_language_ref = nullptr;
 
 DWORD* p_wc4_key_scancode = nullptr;
 
+int8_t* p_wc4_vdu_focus = nullptr;//-1=none, 0=sheilds, 1=, 2=, 3=weapons, 4=comms, 5=damage, 6=power, 7=, 8=rear_view, 9=.
+LONG* p_wc4_vdu_comms_list_size = nullptr;
+
+BYTE* p_wc4_pal_offsets_01 = nullptr;
+BYTE* p_wc4_pal_offsets_02 = nullptr;
+BYTE* p_wc4_pal_offsets_03 = nullptr;
+BYTE* p_wc4_pal_offsets_04 = nullptr;
+BYTE* p_wc4_pal_offsets_05 = nullptr;
+BYTE* p_wc4_pal_offsets_06 = nullptr;
+BYTE* p_wc4_pal_offsets_07 = nullptr;
+BYTE* p_wc4_pal_offsets_08 = nullptr;
+BYTE* p_wc4_pal_offsets_09 = nullptr;
+BYTE* p_wc4_pal_offsets_10 = nullptr;
+
 bool* p_wc4_movie_halt_flag = nullptr;
 
 DWORD* p_wc4_movie_frame_count = nullptr;
@@ -207,7 +221,7 @@ void(*wc4_draw_choice_text_buff)(void* ptr, BYTE* buff, DWORD flags) = nullptr;
 void(*wc4_draw_movie_frame)() = nullptr;
 
 
-void(*wc4_draw_text_to_buff)(DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, DWORD unk2) = nullptr;
+void(*wc4_draw_text_to_buff)(DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, BYTE* p_pal_offsets) = nullptr;
 
 
 #ifdef VERSION_WC4_DVD
@@ -335,6 +349,9 @@ void WC4W_Setup() {
 
     p_wc4_key_scancode = (DWORD*)0x4C4188;
 
+    p_wc4_vdu_focus = (int8_t*)0x4BBAE0;
+    p_wc4_vdu_comms_list_size = (LONG*)0x4BBC90;
+
     p_wc4_movie_halt_flag = (bool*)0x4CB9D8;
 
     p_wc4_movie_frame_count = (DWORD*)0x4CB9C0;
@@ -400,11 +417,22 @@ void WC4W_Setup() {
 
     wc4_draw_movie_frame = (void(*)())0x47B600;
 
-    wc4_draw_text_to_buff = (void(*)(DRAW_BUFFER*, DWORD, DWORD, DWORD, char*, DWORD)) 0x4913A9;
+    wc4_draw_text_to_buff = (void(*)(DRAW_BUFFER*, DWORD, DWORD, DWORD, char*, BYTE*)) 0x4913A9;
 
     p_wc4_movie_no_interlace = (DWORD*)0x4C43F0;
 
     p_wc4_mouse_struct = (void*)0x4D207C;
+
+    p_wc4_pal_offsets_01 = (BYTE*)0x4C3360;
+    p_wc4_pal_offsets_02 = (BYTE*)0x4C2D50;
+    p_wc4_pal_offsets_03 = (BYTE*)0x4C3948;//0
+    p_wc4_pal_offsets_04 = (BYTE*)0x4C4040;
+    p_wc4_pal_offsets_05 = (BYTE*)0x4C2C50;
+    p_wc4_pal_offsets_06 = (BYTE*)0x4C2FB8;
+    p_wc4_pal_offsets_07 = (BYTE*)0x4C3F40;//1
+    p_wc4_pal_offsets_08 = (BYTE*)0x4C36B8;//2
+    p_wc4_pal_offsets_09 = (BYTE*)0x4C3B20;
+    p_wc4_pal_offsets_10 = (BYTE*)0x4C3848;
 }
 
 #else
@@ -531,6 +559,9 @@ void WC4W_Setup() {
 
     p_wc4_key_scancode = (DWORD*)0x4C0660;
 
+    p_wc4_vdu_focus = (int8_t*)0x4C1244;
+    p_wc4_vdu_comms_list_size = (LONG*)0x4C1260;
+
     p_wc4_movie_halt_flag = (bool*)0x4D94C0;
 
     p_wc4_movie_frame_count = (DWORD*)0x4D94A4;
@@ -596,10 +627,21 @@ void WC4W_Setup() {
 
     wc4_draw_movie_frame = (void(*)())0x4830D0;
 
-    wc4_draw_text_to_buff = ( void(*)(DRAW_BUFFER*, DWORD, DWORD, DWORD, char*, DWORD)) 0x48CCE1;
+    wc4_draw_text_to_buff = ( void(*)(DRAW_BUFFER*, DWORD, DWORD, DWORD, char*, BYTE*)) 0x48CCE1;
 
     p_wc4_movie_no_interlace = (DWORD*)0x4D3044;
 
     p_wc4_mouse_struct = (void*)0x4CE848;
+
+    p_wc4_pal_offsets_01 = (BYTE*)0x4BEDD8;
+    p_wc4_pal_offsets_02 = (BYTE*)0x4BE8E0;
+    p_wc4_pal_offsets_03 = (BYTE*)0x4BFCD0;//2
+    p_wc4_pal_offsets_04 = (BYTE*)0x4BEA70;
+    p_wc4_pal_offsets_05 = (BYTE*)0x4BF150;
+    p_wc4_pal_offsets_06 = (BYTE*)0x4BEB70;
+    p_wc4_pal_offsets_07 = (BYTE*)0x4BF520;//1
+    p_wc4_pal_offsets_08 = (BYTE*)0x4BF390;//0
+    p_wc4_pal_offsets_09 = (BYTE*)0x4BF988;
+    p_wc4_pal_offsets_10 = (BYTE*)0x4BFA88;
 }
 #endif

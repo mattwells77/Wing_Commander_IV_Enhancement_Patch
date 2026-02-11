@@ -353,6 +353,22 @@ extern void* p_wc4_play_inflight_hr_movie_return_address;
 
 extern void* p_wc4_mouse_struct;
 
+extern DWORD* p_wc4_key_scancode;
+
+extern int8_t* p_wc4_vdu_focus;//-1=none, 0=sheilds, 1=, 2=, 3=weapons, 4=comms, 5=damage, 6=power, 7=, 8=rear_view, 9=.
+extern LONG* p_wc4_vdu_comms_list_size;
+
+extern BYTE* p_wc4_pal_offsets_01;
+extern BYTE* p_wc4_pal_offsets_02;
+extern BYTE* p_wc4_pal_offsets_03;
+extern BYTE* p_wc4_pal_offsets_04;
+extern BYTE* p_wc4_pal_offsets_05;
+extern BYTE* p_wc4_pal_offsets_06;
+extern BYTE* p_wc4_pal_offsets_07;
+extern BYTE* p_wc4_pal_offsets_08;
+extern BYTE* p_wc4_pal_offsets_09;
+extern BYTE* p_wc4_pal_offsets_10;
+
 extern BOOL(*wc4_draw_circle)(DRAW_BUFFER_MAIN* p_toBuff, LONG x, LONG y, DWORD width, DWORD height, DWORD pal_offset);
 
 extern void(__thiscall* wc4_draw_hud_targeting_elements)(void*);
@@ -407,4 +423,4 @@ extern void(*wc4_deallocate_mem_main)(void*);
 extern BOOL(**p_wc4_xanlib_drawframeXD)(VIDframe* vidFrame, BYTE* tBuff, UINT tWidth, DWORD flag);
 extern BOOL(__thiscall** p_wc4_xanlib_play)(void*, LONG num);
 
-extern void(*wc4_draw_text_to_buff)(DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1 ,char* text_buff, DWORD unk2);
+extern void(*wc4_draw_text_to_buff)(DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1 ,char* text_buff, BYTE* p_pal_offsets);
