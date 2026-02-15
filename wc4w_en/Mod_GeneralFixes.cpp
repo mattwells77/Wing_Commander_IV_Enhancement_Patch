@@ -596,8 +596,9 @@ static void __declspec(naked) processes_object(void) {
 }
 
 
-LONG vdu_comms_selected_line = 0;
+LONG vdu_comms_selected_line = -1;
 BOOL vdu_comms_had_focus = FALSE;
+BYTE vdu_comms_highlight[3][256]{ 0x0 };
 
 //________________________________
 static LONG VDU_Comms_Check_Keys() {
@@ -605,7 +606,7 @@ static LONG VDU_Comms_Check_Keys() {
     LONG key = (LONG)*p_wc4_key_scancode;
 
     switch (key) {
-    case 0x2E://'C'
+    case 0x2E://[C] key pressed. cycle though comms list.
         if (vdu_comms_had_focus)
             vdu_comms_selected_line++;
         if (vdu_comms_selected_line >= *p_wc4_vdu_comms_list_size)
@@ -613,29 +614,36 @@ static LONG VDU_Comms_Check_Keys() {
         //Debug_Info("Num Comms: %d %d", comms_lst_current, num_options);
         break;
 
-    case 1://esc
-        vdu_comms_selected_line = 0;
-        break;
-    case 2://1
-    case 3://2
-    case 4://3
-    case 5://4
-    case 6://5
-    case 7://6
-    case 8://7
-    case 9://8
-    case 10://9
-        if (key - 2 >= *p_wc4_vdu_comms_list_size)
-            vdu_comms_selected_line = 0;
-        break;
-    case 0x1B:
-        key = vdu_comms_selected_line + 2;
+    case 1://   [esc] key pressed. return to previous list or exit.
         if (vdu_comms_selected_line > 0)
             vdu_comms_selected_line = 0;
         break;
-    case 0x1A:
-        key = 1;
-        vdu_comms_selected_line = 0;
+        //number key pressed.
+    case 2://   [1] key press
+    case 3://   [2]
+    case 4://   [3]
+    case 5://   [4]
+    case 6://   [5]
+    case 7://   [6]
+    case 8://   [7]
+    case 9://   [8]
+    case 10://  [9]
+        if (vdu_comms_selected_line < 0)//exit if no item is currently selected(-1).
+            break;
+        if (key - 2 >= *p_wc4_vdu_comms_list_size)
+            vdu_comms_selected_line = 0;
+        break;
+    case 0x1B://']' key pressed. select highlighted list item.
+        if (vdu_comms_selected_line < 0)//exit if no item is currently selected(-1).
+            break;
+        key = vdu_comms_selected_line + 2;// add 2 to set a number key, as their codes start at '2' which equals the [1] key.
+        if (vdu_comms_selected_line > 0)
+            vdu_comms_selected_line = 0;
+        break;
+    case 0x1A://'[' key pressed. return to previous list or exit.
+        key = 1;//[esc]
+        if (vdu_comms_selected_line > 0)
+            vdu_comms_selected_line = 0;
         break;
     default:
         break;
@@ -672,12 +680,39 @@ static void __declspec(naked) vdu_comms_check_keys(void) {
 }
 
 
-//____________________________________________________________________________________________________________________________________________
-static void VDU_Comms_Draw_Menu_Text(LONG line_num, DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, BYTE* p_pal_offsets) {
+//_________________________________________________________________________________________
+static BYTE* VDU_Comms_Get_Pal_Highlight_Offsets(BYTE hud_colour_type, BYTE* p_pal_offsets) {
+    
+    static bool run_once = false;
+    
+    if (hud_colour_type >= 3)//return regular colour if coolour type out of range.
+        return p_pal_offsets;
+    if (run_once) 
+        return vdu_comms_highlight[hud_colour_type];
 
+    run_once = true;//run setup once
+    //vdu_comms_highlight is an 256 byte array of pal offsets, with 0-254 filled with the same pal offset and 255 set to the value 255 as mask colour.
+    //setup arrays for each of the 3 hud colour types.
+    //green
+    memset(vdu_comms_highlight[0], 0x3B, sizeof(vdu_comms_highlight[0]));
+    vdu_comms_highlight[0][255] = 0xFF;
+    //blue
+    memset(vdu_comms_highlight[1], 0x1B, sizeof(vdu_comms_highlight[1]));
+    vdu_comms_highlight[1][255] = 0xFF;
+    //red
+    memset(vdu_comms_highlight[2], 0x5E, sizeof(vdu_comms_highlight[2]));
+    vdu_comms_highlight[2][255] = 0xFF;
+
+    return vdu_comms_highlight[hud_colour_type];
+}
+
+
+//___________________________________________________________________________________________________________________________________________________________
+static void VDU_Comms_Draw_Menu_Text(BYTE hud_type, LONG line_num, DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, BYTE* p_pal_offsets) {
+    
     //highlight menu text if line is selected.
     if (line_num - 1 == vdu_comms_selected_line)
-        p_pal_offsets = p_wc4_pal_offsets_10;
+        p_pal_offsets = VDU_Comms_Get_Pal_Highlight_Offsets(hud_type, p_pal_offsets);
     wc4_draw_text_to_buff(p_toBuff, x, y, unk1, text_buff, p_pal_offsets);
 }
 
@@ -693,12 +728,15 @@ static void __declspec(naked) vdu_comms_draw_menu_text(void) {
         push[esp + 0x18]
         push[esp + 0x18]
 #ifdef VERSION_WC4_DVD
-        push edi
+        push edi //current line num
 #else
-        push ebp
+        push ebp //current line num
 #endif
+        mov eax, dword ptr ds:[esi+0x4]
+        mov al, byte ptr ds:[eax+0x18]
+        push al //hud colour type 0-2. 0=green, 1=blue, 2=red
         call VDU_Comms_Draw_Menu_Text
-        add esp, 0x1C
+        add esp, 0x20
 
         ret
     }
@@ -814,7 +852,7 @@ void Modifications_GeneralFixes() {
     //Load files in place of files located in .tre archives.
     FuncReplace32(0x49AB03, 0x0AA9, (DWORD)&load_data_file);
     //check if files are being closed.
-    //FuncReplace32(0x49ABE9, 0x0F82, (DWORD)&close_file_handle);
+    //FuncReplace32(0x49ABEA, 0x0F82, (DWORD)&close_file_handle);
 
     //Fixed a code error on a call to the "VirtualProtect" function, where the "lpflOldProtect" parameter was set to NULL when it should point to a place to store the previous access protection value.
     FuncReplace32(0x410B29, 0xFFFFFC93, (DWORD)&virtualprotect_fix);
