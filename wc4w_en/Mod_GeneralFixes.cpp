@@ -760,6 +760,81 @@ static void __declspec(naked) vdu_check_if_comms_had_focus(void) {
 }
 
 
+//__________________________________
+//Regulate how often mouse position is sampled for adjusting ship speed.
+static BOOL Is_Mouse_Throttle_Time() {
+
+    static LARGE_INTEGER last_throttle_time = { 0 };
+    static LARGE_INTEGER update_time{ 0 };
+    static bool run_once = false;
+
+    if (!run_once)
+        update_time.QuadPart = p_wc4_frequency->QuadPart / 16LL;
+    
+    LARGE_INTEGER time = { 0 };
+    LARGE_INTEGER ElapsedMicroseconds = { 0 };
+
+    QueryPerformanceCounter(&time);
+
+    ElapsedMicroseconds.QuadPart = time.QuadPart - last_throttle_time.QuadPart;
+    if (ElapsedMicroseconds.QuadPart < 0 || ElapsedMicroseconds.QuadPart > update_time.QuadPart) {
+        last_throttle_time.QuadPart = time.QuadPart;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+
+//_________________________________________________________
+static void __declspec(naked) mouse_sub_throttle_time(void) {
+
+    __asm {
+        pushad
+        call Is_Mouse_Throttle_Time
+        cmp eax, 0
+        popad
+        je exit_func
+
+        //divide mouse y position from centre by 32 for greater precision. this was formerly a division by 4.
+#ifdef VERSION_WC4_DVD
+        shr edx, 0x5
+        sub dword ptr ds : [eax + 0x8] , edx
+#else
+        shr eax, 0x5
+        sub dword ptr ds : [edx + 0x8] , eax
+#endif
+
+        exit_func :
+        ret
+    }
+}
+
+
+//_________________________________________________________
+static void __declspec(naked) mouse_add_throttle_time(void) {
+
+    __asm {
+        pushad
+        call Is_Mouse_Throttle_Time
+        cmp eax, 0
+        popad
+        je exit_func
+
+        //divide mouse y position from centre by 32 for greater precision. this was formerly a division by 4.
+#ifdef VERSION_WC4_DVD
+        shr ecx, 0x5
+        add dword ptr ds : [eax + 0x8] , ecx
+#else
+        shr eax, 0x5
+        add dword ptr ds : [edx + 0x8] , eax
+#endif
+
+        exit_func :
+        ret
+    }
+}
+
+
 #ifdef VERSION_WC4_DVD
 //_______________________________
 void Modifications_GeneralFixes() {
@@ -842,6 +917,20 @@ void Modifications_GeneralFixes() {
     MemWrite8(0x40FC79, 0x2D, 0x2C);
 
     FuncReplace32(0x411251, 0x080154, (DWORD)&vdu_comms_draw_menu_text);
+    //---------------------------------------------------------------------
+
+
+    //----better-throttle-regulation-when-using-the-mouse------------------
+    MemWrite16(0x44C0D6, 0x788B, 0xE890);
+    FuncWrite32(0x44C0D8, 0x02EAC108, (DWORD)&mouse_sub_throttle_time);
+    MemWrite32(0x44C0DC, 0x7889FA2B, 0x90909090);
+    MemWrite8(0x44C0E0, 0x08, 0x90);
+
+    MemWrite16(0x44C0F1, 0x788B, 0xE890);
+    FuncWrite32(0x44C0F3, 0x02E9C108, (DWORD)&mouse_add_throttle_time);
+    MemWrite16(0x44C0F7, 0xF903, 0x9090);
+    MemWrite16(0x44C0FE, 0x7889, 0x9090);
+    MemWrite8(0x44C100, 0x08, 0x90);
     //---------------------------------------------------------------------
 }
 
@@ -947,6 +1036,19 @@ void Modifications_GeneralFixes() {
     MemWrite8(0x427CC8, 0x2D, 0x2C);//done
 
     FuncReplace32(0x425BA9, 0x067134, (DWORD)&vdu_comms_draw_menu_text);
+    //---------------------------------------------------------------------
+
+
+    //----better-throttle-regulation-when-using-the-mouse------------------
+    MemWrite16(0x449260, 0xE8C1, 0xE890);
+    FuncWrite32(0x449262, 0x085A8B02, (DWORD)&mouse_sub_throttle_time);
+    MemWrite32(0x449266, 0x5A89D82B, 0x90909090);
+    MemWrite8(0x44926A, 0x08, 0x90);
+
+    MemWrite16(0x449285, 0xE8C1, 0xE890);
+    FuncWrite32(0x449287, 0x085A8B02, (DWORD)&mouse_add_throttle_time);
+    MemWrite32(0x44928B, 0x5A89D803, 0x90909090);
+    MemWrite8(0x44928F, 0x08, 0x90);
     //---------------------------------------------------------------------
 }
 #endif
