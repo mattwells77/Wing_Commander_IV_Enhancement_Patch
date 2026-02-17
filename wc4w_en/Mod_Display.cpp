@@ -509,6 +509,27 @@ static void __fastcall Set_Space_View_POV1(void* p_space_class) {
     p_view_vars[6] = (WORD)(xpos / (float)GUI_WIDTH * width);
     p_view_vars[7] = (WORD)(ypos / (float)GUI_HEIGHT * height);
 
+    //set variables used in the drawing of the highlighted circle when target in cross-hairs.
+    LONG target_area_size = p_cockpit_class2[39];
+    float x_unit = 0;
+    float y_unit = 0;
+    float x = 0;
+    float y = 0;
+    surface_space2D->GetPosition(&x, &y);
+    surface_space2D->GetScaledPixelDimensions(&x_unit, &y_unit);
+
+    if (is_space_scaled) {
+        float space_scale_x = (float)spaceWidth / clientWidth;
+        float space_scale_y = (float)spaceHeight / clientHeight;
+        x *= space_scale_x;
+        y *= space_scale_y;
+        x_unit *= space_scale_x;
+        y_unit *= space_scale_y;
+    }
+    *p_wc4_crosshair_target_x = (LONG)(x + xpos * x_unit);
+    *p_wc4_crosshair_target_y = (LONG)(y + ypos * y_unit);
+    *p_wc4_crosshair_target_area_size = (LONG)(target_area_size * y_unit);
+
     //Debug_Info_Flight("Set_Space_View_POV1 centre_x=%d, centre_y=%d, new_centre_x=%d, new_centre_y=%d", xpos, ypos, p_view_vars[6], p_view_vars[7]);
 }
 
@@ -2774,6 +2795,23 @@ void Modifications_Display() {
     MemWrite16(0x44F09B, 0x3539, 0xE890);
     FuncWrite32(0x44F09D, 0x4B47DC, (DWORD)&inflight_movie_audio_check);
     //---------------------------------------------------------
+
+    //----fix-highlight-when-target-in-cross-hairs----
+    //remove setting of highlight variables here.
+    //highlight variables are set in "Set_Space_View_POV1" function.
+    MemWrite16(0x40EB0D, 0x8B8B, 0x9090);
+    MemWrite32(0x40EB0F, 0x9C, 0x90909090);
+    MemWrite16(0x40EB13, 0x0D89, 0x9090);
+    MemWrite32(0x40EB15, 0x4BB9E0, 0x90909090);
+    MemWrite16(0x40EB19, 0x938B, 0x9090);
+    MemWrite32(0x40EB1B, 0xA0, 0x90909090);
+    MemWrite16(0x40EB1F, 0x1589, 0x9090);
+    MemWrite32(0x40EB21, 0x4BB9F0, 0x90909090);
+    MemWrite16(0x40EB25, 0x838B, 0x9090);
+    MemWrite32(0x40EB27, 0xA4, 0x90909090);
+    MemWrite8(0x40EB2B, 0xA3, 0x90);
+    MemWrite32(0x40EB2C, 0x4BB9E4, 0x90909090);
+    //------------------------------------------------
 }
 
 #else
@@ -3058,6 +3096,23 @@ void Modifications_Display() {
     FuncWrite32(0x441AFF, 0x4D55B8, (DWORD)&inflight_movie_audio_check);
     MemWrite16(0x441B03, 0xC085, 0x9090);
     //---------------------------------------------------------
+
+    //----fix-highlight-when-target-in-cross-hairs----
+    //remove setting of highlight variables here.
+    //highlight variables are set in "Set_Space_View_POV1" function.
+    MemWrite16(0x420930, 0x8E8B, 0x9090);
+    MemWrite32(0x420932, 0x9C, 0x90909090);
+    MemWrite16(0x420936, 0x0D89, 0x9090);
+    MemWrite32(0x420938, 0x4C0FC8, 0x90909090);
+    MemWrite16(0x42093C, 0x968B, 0x9090);
+    MemWrite32(0x42093E, 0xA0, 0x90909090);
+    MemWrite16(0x420942, 0x1589, 0x9090);
+    MemWrite32(0x420944, 0x4C10B0, 0x90909090);
+    MemWrite16(0x420948, 0x868B, 0x9090);
+    MemWrite32(0x42094A, 0xA4, 0x90909090);
+    MemWrite8(0x42094E, 0xA3, 0x90);
+    MemWrite32(0x42094F, 0x4C10B4, 0x90909090);
+    //------------------------------------------------
 }
 #endif
 

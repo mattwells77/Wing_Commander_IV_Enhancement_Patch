@@ -201,6 +201,12 @@ bool* p_wc4_movie_halt_flag = nullptr;
 
 DWORD* p_wc4_movie_frame_count = nullptr;
 
+
+LONG* p_wc4_crosshair_target_x = nullptr;
+LONG* p_wc4_crosshair_target_y = nullptr;
+LONG* p_wc4_crosshair_target_area_size = nullptr;
+
+
 void(__thiscall* wc4_file_init)(void*) = nullptr;
 BOOL(__thiscall* wc4_file_load)(void*, char* path, DWORD dwDesiredAccess, BOOL halt_on_create_file_error, DWORD dwFlagsAndAttributes) = nullptr;
 BOOL(__thiscall* wc4_file_close)(void*) = nullptr;
@@ -433,6 +439,10 @@ void WC4W_Setup() {
     p_wc4_pal_offsets_08 = (BYTE*)0x4C36B8;//2
     p_wc4_pal_offsets_09 = (BYTE*)0x4C3B20;
     p_wc4_pal_offsets_10 = (BYTE*)0x4C3848;
+
+    p_wc4_crosshair_target_x = (LONG*)0x4BB9F0;
+    p_wc4_crosshair_target_y = (LONG*)0x4BB9E4;
+    p_wc4_crosshair_target_area_size = (LONG*)0x4BB9E0;
 }
 
 #else
@@ -643,5 +653,9 @@ void WC4W_Setup() {
     p_wc4_pal_offsets_08 = (BYTE*)0x4BF390;//0
     p_wc4_pal_offsets_09 = (BYTE*)0x4BF988;
     p_wc4_pal_offsets_10 = (BYTE*)0x4BFA88;
+
+    p_wc4_crosshair_target_x = (LONG*)0x4C10B0;
+    p_wc4_crosshair_target_y = (LONG*)0x4C10B4;
+    p_wc4_crosshair_target_area_size = (LONG*)0x4C0FC8;
 }
 #endif

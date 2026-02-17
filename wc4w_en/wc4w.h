@@ -369,6 +369,10 @@ extern BYTE* p_wc4_pal_offsets_08;
 extern BYTE* p_wc4_pal_offsets_09;
 extern BYTE* p_wc4_pal_offsets_10;
 
+extern LONG* p_wc4_crosshair_target_x;
+extern LONG* p_wc4_crosshair_target_y;
+extern LONG* p_wc4_crosshair_target_area_size;
+
 extern BOOL(*wc4_draw_circle)(DRAW_BUFFER_MAIN* p_toBuff, LONG x, LONG y, DWORD width, DWORD height, DWORD pal_offset);
 
 extern void(__thiscall* wc4_draw_hud_targeting_elements)(void*);
