@@ -422,13 +422,83 @@ static void Debug_Info_WC4(const char* format, ...) {
 }
 
 
+//_______________________________________________
+static BYTE* Get_Wav_Data_Chunk(BYTE* p_wav_data) {
+
+    DWORD code = *(DWORD*)p_wav_data;
+    if (code != 0x46464952)// FOURCC [RIFF]
+        return nullptr;
+
+    p_wav_data += 4;
+    DWORD file_size = *(DWORD*)p_wav_data;
+    LONGLONG remaining_size = (LONGLONG)file_size;
+
+    p_wav_data += 4;
+    remaining_size -= 4;
+
+    code = *(DWORD*)p_wav_data;
+    if (code != 0x45564157) {// FOURCC [WAVE]
+        Debug_Info("Get_Wav_Data_Chunk: Wav RIFF has No WAVE");
+        return nullptr;
+    }
+
+    p_wav_data += 4;
+    remaining_size -= 4;
+
+    DWORD sec_size = 0;
+
+    while (remaining_size > 0) {
+        code = *(DWORD*)p_wav_data;
+        p_wav_data += 4;
+        remaining_size -= 4;
+        sec_size = *(DWORD*)p_wav_data;
+        if (code == 0x61746164)// FOURCC [data]
+            break;
+
+        p_wav_data += 4;
+        remaining_size -= 4;
+        p_wav_data += sec_size;
+        remaining_size -= sec_size;
+    }
+    if (code == 0x61746164) // FOURCC [data]
+        return p_wav_data;
+
+    Debug_Info("Get_Wav_Data_Chunk: data chunk NOT found");
+    return nullptr;
+
+}
+
+
 //_____________________________________________________
-static void __declspec(naked) fix_audio_data_size(void) {
-    //Retrieve the WAV audio buffer size from the WAV header.
-    //This value was originally defined by subtracting the WAV header size from the file size. And was occasionally including non audio data in the buffer, causing popping and static sounds.
+static void __declspec(naked) get_wave_audio_data(void) {
+    // Retrieve the WAV audio data buffer and size.
+    // Replaces the original method of obtaining wave data and size that did not take into account the presents of other chunks.
+    // And was occasionally including non audio data in the buffer, causing popping and static sounds.
     __asm {
-        mov esi, dword ptr ds:[ebx+0x24]
-        mov ebp, dword ptr ds : [esi+0x28]
+        push ebx
+        mov eax, dword ptr ds:[ebx+0x24]// wave file data pointer.
+        push eax
+        call Get_Wav_Data_Chunk
+        add esp, 0x4
+        cmp eax, 0// returned pointer to data_chunk.
+        je failed
+
+        mov ebp, dword ptr ds:[eax]// pointer to the data_chunk size.
+        add eax, 0x4// add 4 to move the pointer to the data_chunk data.
+        
+#ifdef VERSION_WC4_DVD
+        mov edx, eax
+#else
+        mov esi, eax
+#endif
+        mov eax, 0// set eax to 0, Success.
+        jmp exit_func
+
+        failed:// set eax to 1. Failed, initiate the Error Message Box.
+        mov eax, 1
+        
+        exit_func:
+        pop ebx
         ret
     }
 }
@@ -734,7 +804,7 @@ static void __declspec(naked) vdu_comms_draw_menu_text(void) {
 #endif
         mov eax, dword ptr ds:[esi+0x4]
         mov al, byte ptr ds:[eax+0x18]
-        push al //hud colour type 0-2. 0=green, 1=blue, 2=red
+        push eax //hud colour type 0-2. 0=green, 1=blue, 2=red
         call VDU_Comms_Draw_Menu_Text
         add esp, 0x20
 
@@ -894,9 +964,15 @@ void Modifications_GeneralFixes() {
     //___________________________________________________________
 
 
-    //Fix for some static and popping sounds at the end of playback when playing some audio samples. 
-    MemWrite16(0x45E333, 0x738B, 0xE890);
-    FuncWrite32(0x45E335, 0x046B8B24, (DWORD)&fix_audio_data_size);
+    //---Fix for some static and popping sounds at the end of playback when playing some audio samples-----
+    FuncWrite32(0x45E34C, 0x043FE0, (DWORD)&get_wave_audio_data);
+    //Remove old method of obtaining wave data and size that did not take into account the presents of other chunks.
+    MemWrite16(0x45E36B, 0x538B, 0x9090);
+    MemWrite8(0x45E36D, 0x24, 0x90);
+    MemWrite16(0x45E377, 0xC283, 0x9090);
+    MemWrite8(0x45E379, 0x2C, 0x90);
+    //-----------------------------------------------------------------------------------------------------
+
 
     //Increase the allocated general memory size.
     MemWrite8(0x49E542, 0xA1, 0xE8);
@@ -1003,9 +1079,13 @@ void Modifications_GeneralFixes() {
     //___________________________________________________________
 
 
-    //Fix for some static and popping sounds at the end of playback when playing some audio samples. 
-    MemWrite16(0x48607F, 0x6B8B, 0xE890);
-    FuncWrite32(0x486081, 0x24738B04, (DWORD)&fix_audio_data_size);
+    //---Fix for some static and popping sounds at the end of playback when playing some audio samples-----
+    FuncWrite32(0x48609C, 0x028ED8, (DWORD)&get_wave_audio_data);
+    //Remove old method of obtaining wave data and size that did not take into account the presents of other chunks.
+    MemWrite16(0x4860C5, 0x738B, 0x9090);
+    MemWrite32(0x4860C7, 0x2CC68324, 0x90909090);
+    //-----------------------------------------------------------------------------------------------------
+
 
     //fix long pause occurring after auto pilot.
     //changed return from "proccess tune" function from 1 to 0.
