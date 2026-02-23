@@ -47,6 +47,8 @@ UINT clientHeight = 0;
 UINT spaceWidth = 0;
 UINT spaceHeight = 0;
 
+BOOL space_use_original_aspect = FALSE;
+
 BOOL is_space_scaled = FALSE;
 UINT space_scaled_width = 640;
 UINT space_scaled_height = 480;
@@ -219,6 +221,10 @@ static BOOL Window_Setup(HWND hwnd) {
             *p_wc4_movie_no_interlace = true;
     }
 
+
+    if (ConfigReadInt(L"SPACE", L"USE_ORIGINAL_ASPECT_RATIO", CONFIG_SPACE_USE_ORIGINAL_ASPECT_RATIO))
+        space_use_original_aspect = TRUE;
+    
     if (ConfigReadInt(L"SPACE", L"IS_SPACE_SCALED", CONFIG_SPACE_IS_SPACE_SCALED)) {
         is_space_scaled = TRUE;
         space_scaled_height = ConfigReadInt(L"SPACE", L"SCALED_SPACE_HEIGHT", CONFIG_SPACE_SCALED_SPACE_HEIGHT);
