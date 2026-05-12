@@ -136,14 +136,18 @@ void(*wc4_dealocate_mem01)(void*) = nullptr;
 void(*wc4_unknown_func01)() = nullptr;
 void(*wc4_update_input_states)() = nullptr;
 
+BYTE* p_wc4_keyboard_state_main = nullptr;
+BYTE* p_wc4_key_pressed_character_code = nullptr;
 
-BYTE* p_wc4_key_pressed_scancode = nullptr;
+BOOL* p_wc4_space_exit_game_option_flag = nullptr;
+BOOL* p_wc4_space_pause_game_option_flag = nullptr;
 
 BOOL(*wc4_draw_circle)(DRAW_BUFFER_MAIN* p_toBuff, LONG x, LONG y, DWORD width, DWORD height, DWORD pal_offset) = nullptr;
 
 void(__thiscall* wc4_draw_hud_targeting_elements)(void*) = nullptr;
 void(__thiscall* wc4_draw_hud_view_text)(void*) = nullptr;
 
+void(__thiscall* wc4_options_screen)(void*) = nullptr;
 void(__thiscall* wc4_nav_screen)(void*) = nullptr;
 void(__thiscall* wc4_nav_screen_update_position)(void*) = nullptr;
 
@@ -228,6 +232,16 @@ void(*wc4_draw_movie_frame)() = nullptr;
 
 
 void(*wc4_draw_text_to_buff)(DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, BYTE* p_pal_offsets) = nullptr;
+
+void(*wc4_process_key)(BYTE scan_code, BYTE is_ext_key, BYTE state) = nullptr;
+
+void(*wc4_space_mission)() = nullptr;
+
+void(*wc4_mio_screen_loop)(DWORD Arg1, DWORD Arg2, DWORD Arg3, DWORD Arg4, DWORD Arg5, DWORD Arg6) = nullptr;
+
+void(*wc4_update_joystick)() = nullptr;
+void(*wc4_proccess_joystick_data)() = nullptr;
+void(__stdcall* wc4_setup_joystick)(LONG flag) = nullptr;
 
 
 #ifdef VERSION_WC4_DVD
@@ -314,8 +328,9 @@ void WC4W_Setup() {
 
     wc4_update_input_states = (void(*)())0x46F500;
 
-    p_wc4_key_pressed_scancode = (BYTE*)0x4CD69C;
-
+    p_wc4_key_pressed_character_code = (BYTE*)0x4CD69C;
+    p_wc4_keyboard_state_main = (BYTE*)0x4CD4C0;
+    wc4_process_key = (void(*)(BYTE, BYTE, BYTE))0x488F80;
 
     wc4_translate_messages = (BYTE(*)(BOOL, BOOL))0x489260;
 
@@ -370,6 +385,7 @@ void WC4W_Setup() {
 
     wc4_draw_hud_view_text = (void(__thiscall*)(void*))0x44ADE0;
 
+    wc4_options_screen = (void(__thiscall*)(void*))0x455BF0;
     wc4_nav_screen = (void(__thiscall*)(void*))0x445340;
 
     wc4_nav_screen_update_position = (void(__thiscall*)(void*))0x444900;
@@ -443,6 +459,17 @@ void WC4W_Setup() {
     p_wc4_crosshair_target_x = (LONG*)0x4BB9F0;
     p_wc4_crosshair_target_y = (LONG*)0x4BB9E4;
     p_wc4_crosshair_target_area_size = (LONG*)0x4BB9E0;
+
+    p_wc4_space_exit_game_option_flag = (BOOL*)0x4BC6B0;
+    p_wc4_space_pause_game_option_flag = (BOOL*)0x4BC6C8;
+
+    wc4_space_mission = (void(*)())0x4548E7;
+
+    wc4_mio_screen_loop = (void(*)(DWORD Arg1, DWORD Arg2, DWORD Arg3, DWORD Arg4, DWORD Arg5, DWORD Arg6))0x49ED30;
+
+    wc4_update_joystick = (void(*)())0x488AE0;
+    wc4_proccess_joystick_data = (void(*)())0x488DD0;
+    wc4_setup_joystick = (void(__stdcall*)(LONG))0x46F120;
 }
 
 #else
@@ -528,8 +555,9 @@ void WC4W_Setup() {
 
     wc4_update_input_states = (void(*)())0x4132F0;
 
-    p_wc4_key_pressed_scancode = (BYTE*)0x4DC358;
-
+    p_wc4_key_pressed_character_code = (BYTE*)0x4DC358;
+    p_wc4_keyboard_state_main = (BYTE*)0x4CE7C0;
+    wc4_process_key = (void(*)(BYTE, BYTE, BYTE))0x4ADCF0;
 
     wc4_translate_messages = (BYTE(*)(BOOL, BOOL))0x4AE1C0;
 
@@ -584,6 +612,7 @@ void WC4W_Setup() {
 
     wc4_draw_hud_view_text = (void(__thiscall*)(void*))0x413B20;
 
+    wc4_options_screen = (void(__thiscall*)(void*))0x43C280;
     wc4_nav_screen = (void(__thiscall*)(void*))0x41AA00;
 
     wc4_nav_screen_update_position = (void(__thiscall*)(void*))0x41C340;
@@ -657,5 +686,16 @@ void WC4W_Setup() {
     p_wc4_crosshair_target_x = (LONG*)0x4C10B0;
     p_wc4_crosshair_target_y = (LONG*)0x4C10B4;
     p_wc4_crosshair_target_area_size = (LONG*)0x4C0FC8;
+
+    p_wc4_space_exit_game_option_flag = (BOOL*)0x4BE8D8;
+    p_wc4_space_pause_game_option_flag = (BOOL*)0x4BE898;
+
+    wc4_space_mission = (void(*)())0x474A35;
+
+    wc4_mio_screen_loop = (void(*)(DWORD Arg1, DWORD Arg2, DWORD Arg3, DWORD Arg4, DWORD Arg5, DWORD Arg6))0x4AA787;
+
+    wc4_update_joystick = (void(*)())0x4AD7A0;
+    wc4_proccess_joystick_data = (void(*)())0x4ADB00;
+    wc4_setup_joystick = (void(__stdcall*)(LONG))0x412E50;
 }
 #endif

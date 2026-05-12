@@ -369,6 +369,12 @@ extern BYTE* p_wc4_pal_offsets_08;
 extern BYTE* p_wc4_pal_offsets_09;
 extern BYTE* p_wc4_pal_offsets_10;
 
+extern BYTE* p_wc4_keyboard_state_main;
+extern BYTE* p_wc4_key_pressed_character_code;
+
+extern BOOL* p_wc4_space_exit_game_option_flag;
+extern BOOL* p_wc4_space_pause_game_option_flag;
+
 extern LONG* p_wc4_crosshair_target_x;
 extern LONG* p_wc4_crosshair_target_y;
 extern LONG* p_wc4_crosshair_target_area_size;
@@ -378,6 +384,7 @@ extern BOOL(*wc4_draw_circle)(DRAW_BUFFER_MAIN* p_toBuff, LONG x, LONG y, DWORD 
 extern void(__thiscall* wc4_draw_hud_targeting_elements)(void*);
 extern void(__thiscall* wc4_draw_hud_view_text)(void*);
 
+extern void(__thiscall* wc4_options_screen)(void*);
 extern void(__thiscall* wc4_nav_screen)(void*);
 
 extern MUSIC_CLASS** pp_wc4_music_thread_class;
@@ -428,3 +435,13 @@ extern BOOL(**p_wc4_xanlib_drawframeXD)(VIDframe* vidFrame, BYTE* tBuff, UINT tW
 extern BOOL(__thiscall** p_wc4_xanlib_play)(void*, LONG num);
 
 extern void(*wc4_draw_text_to_buff)(DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1 ,char* text_buff, BYTE* p_pal_offsets);
+
+extern void(*wc4_process_key)(BYTE scan_code, BYTE is_ext_key, BYTE state);
+
+extern void(*wc4_space_mission)();
+
+extern void(*wc4_mio_screen_loop)(DWORD Arg1, DWORD Arg2, DWORD Arg3, DWORD Arg4, DWORD Arg5, DWORD Arg6);
+
+extern void(*wc4_update_joystick)();
+extern void(*wc4_proccess_joystick_data)();
+extern void(__stdcall* wc4_setup_joystick)(LONG flag);

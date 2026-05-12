@@ -1,6 +1,6 @@
 /*
 The MIT License (MIT)
-Copyright © 2025 Matt Wells
+Copyright © 2025-2026 Matt Wells
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this
 software and associated documentation files (the “Software”), to deal in the
@@ -23,8 +23,8 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "pch.h"
 
 #include "resource.h"
-#include "joystick_config.h"
-#include "joystick.h"
+#include "input_config.h"
+#include "input.h"
 #include "wc4w.h"
 #include "modifications.h"
 #include "configTools.h"
@@ -34,15 +34,18 @@ using namespace Windows::Gaming::Input;
 
 HWND hWin_SaveAsPreset = nullptr;
 HWND hWin_Config_Joy = nullptr;
+HWND hWin_Config_Joy_Off = nullptr;
+HWND hWin_Config_Joy_Control = nullptr;
 HWND hWin_Config_Control = nullptr;
 HWND hWin_Config_Mouse = nullptr;
+HWND hWin_Config_Mouse_Control = nullptr;
 
 BOOL joyList_Updated = 0;
 
 HWND hWin_AxisCalibrate = nullptr;
 
 #define GEN_TEXT_BUFF_COUNT	64
-wchar_t general_string_buff[GEN_TEXT_BUFF_COUNT]{0};
+wchar_t general_string_buff[GEN_TEXT_BUFF_COUNT]{ 0 };
 wchar_t general_string_buff2[GEN_TEXT_BUFF_COUNT]{ 0 };
 
 int current_JoySelected = -1;
@@ -55,6 +58,458 @@ bool* current_buttonArray = nullptr;
 
 int current_num_switches = 0;
 GameControllerSwitchPosition* current_switchArray;
+
+
+WC4_ACTIONS actions_gui[]{
+		WC4_ACTIONS::None,
+		WC4_ACTIONS::B1_Select,
+		WC4_ACTIONS::B2_Cycle_Hotspots,
+		WC4_ACTIONS::Cycle_Hotspots_Reverse,
+
+		WC4_ACTIONS::Gamma_Increase,
+		WC4_ACTIONS::Gamma_Decrease,
+
+		WC4_ACTIONS::Toggle_Sound_Effects,
+		WC4_ACTIONS::Sound_Effects_Volume_Increase,
+		WC4_ACTIONS::Sound_Effects_Volume_Decrease,
+
+		WC4_ACTIONS::Toggle_Music,
+		WC4_ACTIONS::Music_Volume_Increase,
+		WC4_ACTIONS::Music_Volume_Decrease,
+
+		WC4_ACTIONS::Save_Load_Up,
+		WC4_ACTIONS::Save_Load_Down,
+		WC4_ACTIONS::Save_Load_Page_Up,
+		WC4_ACTIONS::Save_Load_Page_Down,
+
+		WC4_ACTIONS::Exit_Game,
+		WC4_ACTIONS::Exit_Game_Yes,
+		WC4_ACTIONS::Exit_Game_No,
+
+		WC4_ACTIONS::Escape,
+};
+
+
+WC4_ACTIONS actions_gui_mouse[]{
+		WC4_ACTIONS::None,
+		WC4_ACTIONS::B1_Select,
+		WC4_ACTIONS::B2_Cycle_Hotspots,
+		WC4_ACTIONS::Cycle_Hotspots_Reverse,
+
+		WC4_ACTIONS::Gamma_Increase,
+		WC4_ACTIONS::Gamma_Decrease,
+
+		WC4_ACTIONS::Toggle_Sound_Effects,
+		WC4_ACTIONS::Sound_Effects_Volume_Increase,
+		WC4_ACTIONS::Sound_Effects_Volume_Decrease,
+
+		WC4_ACTIONS::Toggle_Music,
+		WC4_ACTIONS::Music_Volume_Increase,
+		WC4_ACTIONS::Music_Volume_Decrease,
+
+		WC4_ACTIONS::Save_Load_Up,
+		WC4_ACTIONS::Save_Load_Down,
+		WC4_ACTIONS::Save_Load_Page_Up,
+		WC4_ACTIONS::Save_Load_Page_Down,
+
+		WC4_ACTIONS::Exit_Game,
+		WC4_ACTIONS::Exit_Game_Yes,
+		WC4_ACTIONS::Exit_Game_No,
+
+		WC4_ACTIONS::Escape,
+
+};
+
+
+WC4_ACTIONS actions_space[]{
+	WC4_ACTIONS::None,
+
+	WC4_ACTIONS::B1_Fire_Guns,
+	WC4_ACTIONS::B2_Modifier,
+	WC4_ACTIONS::Fire_Missile,
+	WC4_ACTIONS::Drop_Decoy,
+
+	WC4_ACTIONS::Full_Guns,
+	WC4_ACTIONS::Synchronize_guns,
+	WC4_ACTIONS::Cycle_Guns,
+	WC4_ACTIONS::Toggle_Normal_Special_Guns,//	H
+
+	WC4_ACTIONS::Lock_Closest_Enemy,//	U
+	WC4_ACTIONS::Lock_Closest_Enemy_And_Match_Speed,
+	WC4_ACTIONS::Cycle_Targets,
+	WC4_ACTIONS::Cycle_Turrets,
+	WC4_ACTIONS::Lock_target,
+
+	WC4_ACTIONS::Speed_Increase,
+	WC4_ACTIONS::Speed_Decrease,
+	WC4_ACTIONS::Speed_Zero,
+	WC4_ACTIONS::Speed_Max,
+	WC4_ACTIONS::Afterburner,
+	WC4_ACTIONS::Toggle_Afterburner,
+
+	WC4_ACTIONS::Autopilot,
+	WC4_ACTIONS::Jump,
+	WC4_ACTIONS::Cloak,
+	WC4_ACTIONS::Eject,
+
+	WC4_ACTIONS::Auto_slide,
+	WC4_ACTIONS::Toggle_Auto_slide,
+
+	WC4_ACTIONS::Toggle_Smart_Targeting,
+	WC4_ACTIONS::Toggle_Auto_Tracking,
+
+	WC4_ACTIONS::Cycle_VDUs,
+	WC4_ACTIONS::VDU_Shield,
+	WC4_ACTIONS::VDU_Comms,
+	WC4_ACTIONS::VDU_Damage,
+	//WC4_ACTIONS::VDU_Weapons,
+	WC4_ACTIONS::VDU_Power,
+	WC4_ACTIONS::VDU_View_Rear_Turret,
+	WC4_ACTIONS::Config_Cycle_Missile,
+
+	WC4_ACTIONS::VDU_Option_Key_1,
+	WC4_ACTIONS::VDU_Option_Key_2,
+	WC4_ACTIONS::Select_All_Missiles,
+
+	WC4_ACTIONS::Power_Set_Selected_Component_100,
+	WC4_ACTIONS::Power_Reset_Components_25,
+	WC4_ACTIONS::Power_Lock_Selected_Component,
+
+	WC4_ACTIONS::Disable_Video_In_Left_VDU,
+
+	WC4_ACTIONS::WingMan_Break_And_Attack,
+	WC4_ACTIONS::WingMan_Form_On_Wing,
+	WC4_ACTIONS::WingMan_Request_Status,
+	WC4_ACTIONS::WingMan_Help_Me_Out,
+	WC4_ACTIONS::WingMan_Attack_My_Target,
+	WC4_ACTIONS::Enemy_Taunt,
+
+	WC4_ACTIONS::Pitch_Down,
+	WC4_ACTIONS::Pitch_Up,
+	WC4_ACTIONS::Yaw_Left,
+	WC4_ACTIONS::Yaw_Right,
+	WC4_ACTIONS::Pitch_Down_Yaw_Left,
+	WC4_ACTIONS::Pitch_Down_Yaw_Right,
+	WC4_ACTIONS::Pitch_Up_Yaw_Left,
+	WC4_ACTIONS::Pitch_Up_Yaw_Right,
+
+	WC4_ACTIONS::Roll_Left,
+	WC4_ACTIONS::Roll_Right,
+	WC4_ACTIONS::Double_Yaw_Pitch_Roll_Rates,
+
+	WC4_ACTIONS::Game_Options,
+	WC4_ACTIONS::Nav_Map,
+	WC4_ACTIONS::Pause,
+	WC4_ACTIONS::Escape,
+
+	WC4_ACTIONS::View_Front,
+	WC4_ACTIONS::View_Left,
+	WC4_ACTIONS::View_Right,
+	WC4_ACTIONS::View_Rear_Turret,
+	WC4_ACTIONS::Camera_Chase,
+	WC4_ACTIONS::Camera_Object,
+	WC4_ACTIONS::Camera_Missile,
+	WC4_ACTIONS::Camera_Victim,
+	WC4_ACTIONS::Camera_Track,
+
+	WC4_ACTIONS::Toggle_Sound_Effects,
+	WC4_ACTIONS::Toggle_Music,
+
+	WC4_ACTIONS::Exit_Game,
+
+	WC4_ACTIONS::ReMap_1,
+	WC4_ACTIONS::ReMap_2,
+	WC4_ACTIONS::ReMap_3,
+};
+
+
+WC4_ACTIONS actions_space_mouse[]{
+	WC4_ACTIONS::None,
+
+	WC4_ACTIONS::B1_Fire_Guns,
+	WC4_ACTIONS::B2_Modifier,
+	WC4_ACTIONS::Fire_Missile,
+	WC4_ACTIONS::Drop_Decoy,
+
+	WC4_ACTIONS::Full_Guns,
+	WC4_ACTIONS::Synchronize_guns,
+	WC4_ACTIONS::Cycle_Guns,
+	WC4_ACTIONS::Toggle_Normal_Special_Guns,//	H
+
+	WC4_ACTIONS::Lock_Closest_Enemy,//	U
+	WC4_ACTIONS::Lock_Closest_Enemy_And_Match_Speed,
+	WC4_ACTIONS::Cycle_Targets,
+	WC4_ACTIONS::Cycle_Turrets,
+	WC4_ACTIONS::Lock_target,
+
+	WC4_ACTIONS::Speed_Increase,
+	WC4_ACTIONS::Speed_Decrease,
+	WC4_ACTIONS::Speed_Zero,
+	WC4_ACTIONS::Speed_Max,
+	WC4_ACTIONS::Afterburner,
+	WC4_ACTIONS::Toggle_Afterburner,
+
+	WC4_ACTIONS::Autopilot,
+	WC4_ACTIONS::Jump,
+	WC4_ACTIONS::Cloak,
+	WC4_ACTIONS::Eject,
+
+	WC4_ACTIONS::Auto_slide,
+	WC4_ACTIONS::Toggle_Auto_slide,
+
+	WC4_ACTIONS::Toggle_Smart_Targeting,
+	WC4_ACTIONS::Toggle_Auto_Tracking,
+
+	WC4_ACTIONS::Cycle_VDUs,
+	WC4_ACTIONS::VDU_Shield,
+	WC4_ACTIONS::VDU_Comms,
+	WC4_ACTIONS::VDU_Damage,
+	//WC4_ACTIONS::VDU_Weapons,
+	WC4_ACTIONS::VDU_Power,
+	WC4_ACTIONS::VDU_View_Rear_Turret,
+	WC4_ACTIONS::Config_Cycle_Missile,
+
+	WC4_ACTIONS::VDU_Option_Key_1,
+	WC4_ACTIONS::VDU_Option_Key_2,
+	WC4_ACTIONS::Select_All_Missiles,
+
+	WC4_ACTIONS::Power_Set_Selected_Component_100,
+	WC4_ACTIONS::Power_Reset_Components_25,
+	WC4_ACTIONS::Power_Lock_Selected_Component,
+
+	WC4_ACTIONS::Disable_Video_In_Left_VDU,
+
+	WC4_ACTIONS::WingMan_Break_And_Attack,
+	WC4_ACTIONS::WingMan_Form_On_Wing,
+	WC4_ACTIONS::WingMan_Request_Status,
+	WC4_ACTIONS::WingMan_Help_Me_Out,
+	WC4_ACTIONS::WingMan_Attack_My_Target,
+	WC4_ACTIONS::Enemy_Taunt,
+
+	WC4_ACTIONS::Game_Options,
+	WC4_ACTIONS::Nav_Map,
+	WC4_ACTIONS::Pause,
+	WC4_ACTIONS::Escape,
+
+	WC4_ACTIONS::View_Front,
+	WC4_ACTIONS::View_Left,
+	WC4_ACTIONS::View_Right,
+	WC4_ACTIONS::View_Rear_Turret,
+	WC4_ACTIONS::Camera_Chase,
+	WC4_ACTIONS::Camera_Object,
+	WC4_ACTIONS::Camera_Missile,
+	WC4_ACTIONS::Camera_Victim,
+	WC4_ACTIONS::Camera_Track,
+
+	WC4_ACTIONS::Toggle_Sound_Effects,
+	WC4_ACTIONS::Toggle_Music,
+
+	WC4_ACTIONS::Exit_Game,
+
+	WC4_ACTIONS::ReMap_1,
+	WC4_ACTIONS::ReMap_2,
+	WC4_ACTIONS::ReMap_3,
+};
+
+
+
+WC4_ACTIONS actions_nav[]{
+	WC4_ACTIONS::None,
+
+	WC4_ACTIONS::B2_Modifier,
+	WC4_ACTIONS::Cycle_Targets,
+
+	WC4_ACTIONS::Pitch_Down,
+	WC4_ACTIONS::Pitch_Up,
+	WC4_ACTIONS::Yaw_Left,
+	WC4_ACTIONS::Yaw_Right,
+
+	WC4_ACTIONS::Zoom_In,
+	WC4_ACTIONS::Zoom_Out,
+	WC4_ACTIONS::NAV_Centre_View,
+	WC4_ACTIONS::NAV_Toggle_Starfield,
+	WC4_ACTIONS::NAV_Toggle_Grid,
+	WC4_ACTIONS::NAV_Toggle_Background,
+	WC4_ACTIONS::NAV_Cycle_Points,
+	WC4_ACTIONS::NAV_Cycle_Points_Reverse,
+	WC4_ACTIONS::Escape,
+};
+
+
+WC4_ACTIONS actions_nav_mouse[]{
+	WC4_ACTIONS::None,
+
+	WC4_ACTIONS::B2_Modifier,
+	WC4_ACTIONS::Cycle_Targets,
+
+	WC4_ACTIONS::Zoom_In,
+	WC4_ACTIONS::Zoom_Out,
+	WC4_ACTIONS::NAV_Centre_View,
+	WC4_ACTIONS::NAV_Toggle_Starfield,
+	WC4_ACTIONS::NAV_Toggle_Grid,
+	WC4_ACTIONS::NAV_Toggle_Background,
+	WC4_ACTIONS::NAV_Cycle_Points,
+	WC4_ACTIONS::NAV_Cycle_Points_Reverse,
+	WC4_ACTIONS::Escape,
+};
+
+
+AXIS_TYPE axes_Space[]{
+	AXIS_TYPE::None,
+	AXIS_TYPE::Yaw,
+	AXIS_TYPE::Pitch,
+	AXIS_TYPE::Roll,
+	AXIS_TYPE::Throttle,
+	AXIS_TYPE::AsOneButton,
+	AXIS_TYPE::AsTwoButtons,
+	AXIS_TYPE::Yaw_Left,
+	AXIS_TYPE::Yaw_Right,
+	AXIS_TYPE::Pitch_Up,
+	AXIS_TYPE::Pitch_Down,
+	AXIS_TYPE::Roll_Left,
+	AXIS_TYPE::Roll_Right,
+};
+
+
+AXIS_TYPE axes_GUI[]{
+	AXIS_TYPE::None,
+	AXIS_TYPE::Pointer_X,
+	AXIS_TYPE::Pointer_Y,
+	AXIS_TYPE::AsOneButton,
+	AXIS_TYPE::AsTwoButtons,
+	AXIS_TYPE::Pointer_Left,
+	AXIS_TYPE::Pointer_Right,
+	AXIS_TYPE::Pointer_Up,
+	AXIS_TYPE::Pointer_Down,
+};
+
+
+AXIS_TYPE axes_NAV[]{
+	AXIS_TYPE::None,
+	AXIS_TYPE::Yaw,
+	AXIS_TYPE::Pitch,
+	AXIS_TYPE::AsOneButton,
+	AXIS_TYPE::AsTwoButtons,
+	AXIS_TYPE::Yaw_Left,
+	AXIS_TYPE::Yaw_Right,
+	AXIS_TYPE::Pitch_Up,
+	AXIS_TYPE::Pitch_Down,
+};
+
+
+//_______________________________________________
+static int Get_Axis_Type_Position(AXIS_TYPE axis) {
+	AXIS_TYPE* axes = axes_Space;
+	int axis_count = _countof(axes_Space);
+	if (current_pro_type == PROFILE_TYPE::GUI) {
+		axes = axes_GUI;
+		axis_count = _countof(axes_GUI);
+	}
+	else if (current_pro_type == PROFILE_TYPE::NAV) {
+		axes = axes_NAV;
+		axis_count = _countof(axes_NAV);
+	}
+	for (int i = 0; i < axis_count; i++) {
+		if (axes[i] == axis)
+			return i;
+	}
+	return -1;
+}
+
+
+//__________________________________________
+static AXIS_TYPE Get_Axis_Type(int position) {
+	AXIS_TYPE* axes = axes_Space;
+	int axis_count = _countof(axes_Space);
+	if (current_pro_type == PROFILE_TYPE::GUI) {
+		axes = axes_GUI;
+		axis_count = _countof(axes_GUI);
+	}
+	else if (current_pro_type == PROFILE_TYPE::NAV) {
+		axes = axes_NAV;
+		axis_count = _countof(axes_NAV);
+	}
+	if (position < 0 || position >= axis_count)
+		return AXIS_TYPE::None;
+	return axes[position];
+}
+
+
+//_______________________________________________
+static int Get_Action_Position(WC4_ACTIONS action) {
+	WC4_ACTIONS* actions = actions_space;
+	int actions_count = _countof(actions_space);
+	if (current_pro_type == PROFILE_TYPE::GUI) {
+		actions = actions_gui;
+		actions_count = _countof(actions_gui);
+	}
+	else if (current_pro_type == PROFILE_TYPE::NAV) {
+		actions = actions_nav;
+		actions_count = _countof(actions_nav);
+	}
+	for (int i = 0; i < actions_count; i++) {
+		if (actions[i] == action)
+			return i;
+	}
+	return -1;
+}
+
+
+//________________________________________
+static WC4_ACTIONS Get_Action(int position) {
+	WC4_ACTIONS* actions = actions_space;
+	int actions_count = _countof(actions_space);
+	if (current_pro_type == PROFILE_TYPE::GUI) {
+		actions = actions_gui;
+		actions_count = _countof(actions_gui);
+	}
+	else if (current_pro_type == PROFILE_TYPE::NAV) {
+		actions = actions_nav;
+		actions_count = _countof(actions_nav);
+	}
+	if (position < 0 || position >= actions_count)
+		return WC4_ACTIONS::End;
+	return actions[position];
+}
+
+
+//_____________________________________________________
+static int Get_Action_Position_Mouse(WC4_ACTIONS action) {
+	WC4_ACTIONS* actions = actions_space_mouse;
+	int actions_count = _countof(actions_space_mouse);
+	if (current_pro_type == PROFILE_TYPE::GUI) {
+		actions = actions_gui_mouse;
+		actions_count = _countof(actions_gui_mouse);
+	}
+	else if (current_pro_type == PROFILE_TYPE::NAV) {
+		actions = actions_nav_mouse;
+		actions_count = _countof(actions_nav_mouse);
+	}
+	for (int i = 0; i < actions_count; i++) {
+		if (actions[i] == action)
+			return i;
+	}
+	return -1;
+}
+
+
+//_______________________________________________
+static WC4_ACTIONS Get_Action_Mouse(int position) {
+	WC4_ACTIONS* actions = actions_space_mouse;
+	int actions_count = _countof(actions_space_mouse);
+	if (current_pro_type == PROFILE_TYPE::GUI) {
+		actions = actions_gui_mouse;
+		actions_count = _countof(actions_gui_mouse);
+	}
+	else if (current_pro_type == PROFILE_TYPE::NAV) {
+		actions = actions_nav_mouse;
+		actions_count = _countof(actions_nav_mouse);
+	}
+	if (position < 0 || position >= actions_count)
+		return WC4_ACTIONS::End;
+	return actions[position];
+}
+
 
 const UINT WC4_ACTION_UID[] {
 	IDS_NONE,
@@ -129,7 +584,38 @@ const UINT WC4_ACTION_UID[] {
 	IDS_ACTION069,
 	IDS_ACTION070,
 	IDS_ACTION071,
+	IDS_ACTION072,
+	IDS_ACTION073,
+	IDS_ACTION074,
+	IDS_ACTION075,
+	IDS_ACTION076,
+	IDS_ACTION077,
+	IDS_ACTION078,
+	IDS_ACTION079,
+	IDS_ACTION080,
+	IDS_ACTION081,
+	IDS_ACTION082,
+	IDS_ACTION083,
+	IDS_ACTION084,
+	IDS_ACTION085,
+	IDS_ACTION086,
+	IDS_ACTION087,
+	IDS_ACTION088,
+	IDS_ACTION089,
+	IDS_ACTION090,
+	IDS_ACTION091,
+	IDS_ACTION092,
+	IDS_ACTION093,
+	IDS_ACTION094,
+	IDS_ACTION095,
+	IDS_ACTION096,
+	IDS_ACTION097,
+	IDS_ACTION098,
+	IDS_ACTION099,
+	IDS_ACTION100,
+	IDS_ACTION101,
 };
+
 
 const UINT AXIS_TYPE_UID[]{
 	IDS_NONE,
@@ -145,10 +631,15 @@ const UINT AXIS_TYPE_UID[]{
 	IDS_AXIS_TYPE010,
 	IDS_AXIS_TYPE011,
 	IDS_AXIS_TYPE012,
-
+	IDS_AXIS_TYPE013,
+	IDS_AXIS_TYPE014,
+	IDS_AXIS_TYPE015,
+	IDS_AXIS_TYPE016,
+	IDS_AXIS_TYPE017,
+	IDS_AXIS_TYPE018,
 };
 
-//
+
 const UINT SWITCH_POS_UID[]{
 	IDS_SWITCH_POS000,
 	IDS_SWITCH_POS001,
@@ -170,7 +661,8 @@ BOOL JoyConfig_Refresh_CurrentAction(WC4_ACTIONS action, BOOL activate) {
 	HWND hwnd_sub = GetDlgItem(hWin_Config_Joy, IDC_STATIC_CURRENT_ACTION);
 	if (!hwnd_sub)
 		return FALSE;
-	
+	Debug_Info("JoyConfig_Refresh_CurrentAction %d %d", static_cast<int>(action), current_pro_type);
+
 	UINT UID = WC4_ACTION_UID[static_cast<int>(WC4_ACTIONS::None)];
 	if (activate)
 		UID = WC4_ACTION_UID[static_cast<int>(action)];
@@ -224,19 +716,24 @@ BOOL JoyConfig_Refresh_CurrentAction(WC4_ACTIONS action, BOOL activate) {
 }
 
 
-//________________________________________________________
-static void JoyConfig_Refresh_Button_Display(HWND hwndDlg) {
+//____________________________________________
+static void JoyConfig_Refresh_Button_Display() {
 
 	static bool pressed = false;
 	static int button = 0;
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	if (!hWin_Config_Joy)
+		return;
+	if (!hWin_Config_Joy_Control)
+		return;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return;
-	HWND hwnd_button = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_BUTTONS);
+	HWND hwnd_button = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_BUTTONS);
 	if (!hwnd_button)
 		return;
-	HWND hwnd_button_state = GetDlgItem(hwndDlg, IDC_STATIC_BUTTON_STATE);
+	HWND hwnd_button_state = GetDlgItem(hWin_Config_Joy_Control, IDC_STATIC_BUTTON_STATE);
 	if (!hwnd_button_state)
 		return;
 	int joy_selected = (int)(SendMessage(hwnd_joy, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
@@ -253,7 +750,7 @@ static void JoyConfig_Refresh_Button_Display(HWND hwndDlg) {
 		return;
 	button = button_selected;
 	pressed = p_action_button->Is_Pressed();
-	
+
 	int id = IDS_UNPRESSED;
 	if (pressed)
 		id = IDS_PRESSED;
@@ -262,19 +759,24 @@ static void JoyConfig_Refresh_Button_Display(HWND hwndDlg) {
 }
 
 
-//___________________________________________________________________
-static void JoyConfig_Refresh_Buttons(HWND hwndDlg, BOOL joy_changed) {
+//_____________________________________________________
+static void JoyConfig_Refresh_Buttons(BOOL joy_changed) {
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	if (!hWin_Config_Joy)
+		return;
+	if (!hWin_Config_Joy_Control)
+		return;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return;
-	HWND hwnd_button = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_BUTTONS);
+	HWND hwnd_button = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_BUTTONS);
 	if (!hwnd_button)
 		return;
-	HWND hwnd_action = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_BUTTON_ACTION);
+	HWND hwnd_action = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_BUTTON_ACTION);
 	if (!hwnd_action)
 		return;
-	HWND hwnd_button_state = GetDlgItem(hwndDlg, IDC_STATIC_BUTTON_STATE);
+	HWND hwnd_button_state = GetDlgItem(hWin_Config_Joy_Control, IDC_STATIC_BUTTON_STATE);
 	if (!hwnd_button_state)
 		return;
 
@@ -312,23 +814,29 @@ static void JoyConfig_Refresh_Buttons(HWND hwndDlg, BOOL joy_changed) {
 	int button_selected = (int)(SendMessage(hwnd_button, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
 	ACTION_KEY* p_action_button = p_joy_selected->Get_Action_Button(button_selected);
 	if (p_action_button) {
-		WC4_ACTIONS action = p_action_button->GetAction();
-		SendMessage(hwnd_action, CB_SETCURSEL, (WPARAM)action, (LPARAM)0);
+		int action_pos = Get_Action_Position(p_action_button->GetAction());
+		if (action_pos >= 0)
+			SendMessage(hwnd_action, CB_SETCURSEL, (WPARAM)action_pos, (LPARAM)0);
 		return;
 	}
 }
 
 
-//__________________________________________________
-static void JoyConfig_Button_SetButton(HWND hwndDlg) {
+//______________________________________
+static void JoyConfig_Button_SetButton() {
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	if (!hWin_Config_Joy)
+		return;
+	if (!hWin_Config_Joy_Control)
+		return;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return;
-	HWND hwnd_selected_button = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_BUTTONS);
+	HWND hwnd_selected_button = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_BUTTONS);
 	if (!hwnd_selected_button)
 		return;
-	HWND hwnd_action = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_BUTTON_ACTION);
+	HWND hwnd_action = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_BUTTON_ACTION);
 	if (!hwnd_action)
 		return;
 
@@ -341,25 +849,31 @@ static void JoyConfig_Button_SetButton(HWND hwndDlg) {
 	ACTION_KEY* p_action_button = p_joy_selected->Get_Action_Button(button_selected);
 	if (!p_action_button)
 		return;
-	WC4_ACTIONS action = (WC4_ACTIONS)(SendMessage(hwnd_action, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
-	p_action_button->Set_Action(action);
 
+	WC4_ACTIONS action = Get_Action(SendMessage(hwnd_action, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
+	if (action != WC4_ACTIONS::End)
+		p_action_button->Set_Action(action);
 }
 
 
-//________________________________________________________
-static void JoyConfig_Refresh_Switch_Display(HWND hwndDlg) {
+//____________________________________________
+static void JoyConfig_Refresh_Switch_Display() {
+
+	if (!hWin_Config_Joy)
+		return;
+	if (!hWin_Config_Joy_Control)
+		return;
 
 	static int current_position = false;
 	static int current_switch = 0;
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return;
-	HWND hwnd_switch = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_SWITCHES);
+	HWND hwnd_switch = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_SWITCHES);
 	if (!hwnd_switch)
 		return;
-	HWND hwnd_button_state = GetDlgItem(hwndDlg, IDC_STATIC_SWITCH_STATE);
+	HWND hwnd_button_state = GetDlgItem(hWin_Config_Joy_Control, IDC_STATIC_SWITCH_STATE);
 	if (!hwnd_button_state)
 		return;
 	int joy_selected = (int)(SendMessage(hwnd_joy, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
@@ -377,29 +891,33 @@ static void JoyConfig_Refresh_Switch_Display(HWND hwndDlg) {
 	current_switch = switch_selected;
 	current_position = p_action_switch->Get_Current_Position();
 
-	
+
 	LoadString(phinstDLL, SWITCH_POS_UID[current_position], general_string_buff, _countof(general_string_buff));
 	SendMessage(hwnd_button_state, (UINT)WM_SETTEXT, (WPARAM)0, (LPARAM)general_string_buff);
-
 }
 
 
-//_________________________________________________________________________________________
-static void JoyConfig_Refresh_Switches(HWND hwndDlg, BOOL joy_changed, BOOL switch_changed) {
+//___________________________________________________________________________
+static void JoyConfig_Refresh_Switches(BOOL joy_changed, BOOL switch_changed) {
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	if (!hWin_Config_Joy)
+		return;
+	if (!hWin_Config_Joy_Control)
+		return;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return;
-	HWND hwnd_switch = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_SWITCHES);
+	HWND hwnd_switch = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_SWITCHES);
 	if (!hwnd_switch)
 		return;
-	HWND hwnd_pos = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_SWITCH_POS);
+	HWND hwnd_pos = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_SWITCH_POS);
 	if (!hwnd_pos)
 		return;
-	HWND hwnd_action = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_SWITCH_ACTION);
+	HWND hwnd_action = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_SWITCH_ACTION);
 	if (!hwnd_action)
 		return;
-	HWND hwnd_button_state = GetDlgItem(hwndDlg, IDC_STATIC_SWITCH_STATE);
+	HWND hwnd_button_state = GetDlgItem(hWin_Config_Joy_Control, IDC_STATIC_SWITCH_STATE);
 	if (!hwnd_button_state)
 		return;
 
@@ -444,7 +962,6 @@ static void JoyConfig_Refresh_Switches(HWND hwndDlg, BOOL joy_changed, BOOL swit
 			for (int i = 1; i < 9; i += step) {
 				LoadString(phinstDLL, SWITCH_POS_UID[i], general_string_buff, _countof(general_string_buff));
 				SendMessage(hwnd_pos, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
-				//SendMessage(hwnd_pos, CB_ADDSTRING, (WPARAM)0, (LPARAM)SWITCH_POSITION_TEXT[i]);
 			}
 			SendMessage(hwnd_pos, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
 		}
@@ -463,26 +980,32 @@ static void JoyConfig_Refresh_Switches(HWND hwndDlg, BOOL joy_changed, BOOL swit
 	if (p_action_switch) {
 		int switch_position = (int)(SendMessage(hwnd_pos, CB_GETCURSEL, (WPARAM)0, (LPARAM)0)) + 1;
 
-		WC4_ACTIONS action = p_action_switch->GetAction(switch_position);
-		SendMessage(hwnd_action, CB_SETCURSEL, (WPARAM)action, (LPARAM)0);
+		int action_pos = Get_Action_Position(p_action_switch->GetAction(switch_position));
+		if (action_pos >= 0)
+			SendMessage(hwnd_action, CB_SETCURSEL, (WPARAM)action_pos, (LPARAM)0);
 		return;
 	}
 }
 
 
-//__________________________________________________
-static void JoyConfig_Switch_SetButton(HWND hwndDlg) {
+//______________________________________
+static void JoyConfig_Switch_SetButton() {
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	if (!hWin_Config_Joy)
+		return;
+	if (!hWin_Config_Joy_Control)
+		return;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return;
-	HWND hwnd_selected_switch = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_SWITCHES);
+	HWND hwnd_selected_switch = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_SWITCHES);
 	if (!hwnd_selected_switch)
 		return;
-	HWND hwnd_pos = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_SWITCH_POS);
+	HWND hwnd_pos = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_SWITCH_POS);
 	if (!hwnd_pos)
 		return;
-	HWND hwnd_action = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_SWITCH_ACTION);
+	HWND hwnd_action = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_SWITCH_ACTION);
 	if (!hwnd_action)
 		return;
 
@@ -496,18 +1019,25 @@ static void JoyConfig_Switch_SetButton(HWND hwndDlg) {
 	ACTION_SWITCH* p_action_switch = p_joy_selected->Get_Action_Switch(switch_selected);
 	if (!p_action_switch)
 		return;
-	WC4_ACTIONS action = (WC4_ACTIONS)(SendMessage(hwnd_action, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
-	p_action_switch->Set_Action(switch_position, action);
+
+	WC4_ACTIONS action = Get_Action(SendMessage(hwnd_action, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
+	if (action != WC4_ACTIONS::End)
+		p_action_switch->Set_Action(switch_position, action);
 }
 
 
-//______________________________________________________
-static void JoyConfig_Refresh_Axis_Display(HWND hwndDlg) {
+//__________________________________________
+static void JoyConfig_Refresh_Axis_Display() {
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	if (!hWin_Config_Joy)
+		return;
+	if (!hWin_Config_Joy_Control)
+		return;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return;
-	HWND hwnd_axis = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_AXIS);
+	HWND hwnd_axis = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_AXIS);
 	if (!hwnd_axis)
 		return;
 
@@ -521,45 +1051,50 @@ static void JoyConfig_Refresh_Axis_Display(HWND hwndDlg) {
 		return;
 	double val = p_action_axis->Get_Current_Val();
 
-	HWND hwnd_sub = GetDlgItem(hwndDlg, IDC_STATIC_AXIS_BOX);
+	HWND hwnd_sub = GetDlgItem(hWin_Config_Joy_Control, IDC_STATIC_AXIS_BOX);
 	RECT rc{};
 	GetWindowRect(hwnd_sub, &rc); //get window rect of control relative to screen
 	POINT pt = { rc.left, rc.top }; //new point object using rect x, y
-	ScreenToClient(hwndDlg, &pt); //convert screen co-ords to client based points
+	ScreenToClient(hWin_Config_Joy_Control, &pt); //convert screen co-ords to client based points
 
 	int width = rc.right - rc.left - 2 - 3;
 
 	int i_val = (int)(val * width);
-	hwnd_sub = GetDlgItem(hwndDlg, IDC_STATIC_AXIS_BAR);
+	hwnd_sub = GetDlgItem(hWin_Config_Joy_Control, IDC_STATIC_AXIS_BAR);
 	MoveWindow(hwnd_sub, pt.x + 1 + i_val, pt.y + 1, 3, 9, TRUE);
 }
 
 
-//_______________________________________________________________________________________
-static void JoyConfig_Refresh_Axes(HWND hwndDlg, BOOL joy_changed, BOOL axis_type_change) {
+//_________________________________________________________________________
+static void JoyConfig_Refresh_Axes(BOOL joy_changed, BOOL axis_type_change) {
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	if (!hWin_Config_Joy)
+		return;
+	if (!hWin_Config_Joy_Control)
+		return;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return;
-	HWND hwnd_axis = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_AXIS);
+	HWND hwnd_axis = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_AXIS);
 	if (!hwnd_axis)
 		return;
-	HWND hwnd_type = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_AXIS_TYPE);
+	HWND hwnd_type = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_AXIS_TYPE);
 	if (!hwnd_type)
 		return;
-	HWND hwnd_sign = GetDlgItem(hwndDlg, IDC_CHECK_SELECTED_AXIS_SIGN);
+	HWND hwnd_sign = GetDlgItem(hWin_Config_Joy_Control, IDC_CHECK_SELECTED_AXIS_SIGN);
 	if (!hwnd_sign)
 		return;
-	HWND hwnd_calibrate = GetDlgItem(hwndDlg, IDC_BUTTON_CALIBRATE_AXIS);
+	HWND hwnd_calibrate = GetDlgItem(hWin_Config_Joy_Control, IDC_BUTTON_CALIBRATE_AXIS);
 	if (!hwnd_calibrate)
 		return;
-	HWND hwnd_centre = GetDlgItem(hwndDlg, IDC_BUTTON_CENTRE_AXIS);
+	HWND hwnd_centre = GetDlgItem(hWin_Config_Joy_Control, IDC_BUTTON_CENTRE_AXIS);
 	if (!hwnd_centre)
 		return;
-	HWND hwnd_butt1 = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_AXIS_BUTTON1);
+	HWND hwnd_butt1 = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_AXIS_BUTTON1);
 	if (!hwnd_butt1)
 		return;
-	HWND hwnd_butt2 = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_AXIS_BUTTON2);
+	HWND hwnd_butt2 = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_AXIS_BUTTON2);
 	if (!hwnd_butt2)
 		return;
 	int joy_selected = (int)(SendMessage(hwnd_joy, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
@@ -596,7 +1131,8 @@ static void JoyConfig_Refresh_Axes(HWND hwndDlg, BOOL joy_changed, BOOL axis_typ
 
 			EnableWindow(hwnd_type, TRUE);
 			AXIS_TYPE axis_type = p_action_axis->Get_Axis_As();
-			SendMessage(hwnd_type, CB_SETCURSEL, (WPARAM)axis_type, (LPARAM)0);
+			int axis_type_pos = Get_Axis_Type_Position(axis_type);
+			SendMessage(hwnd_type, CB_SETCURSEL, (WPARAM)axis_type_pos, (LPARAM)0);
 
 
 			DWORD checked = BST_UNCHECKED;
@@ -612,11 +1148,13 @@ static void JoyConfig_Refresh_Axes(HWND hwndDlg, BOOL joy_changed, BOOL axis_typ
 				is_button1 = TRUE;
 				is_button2 = TRUE;
 			}
-
-			SendMessage(hwnd_butt1, CB_SETCURSEL, (WPARAM)p_action_axis->Get_Button_Action_Min(), (LPARAM)0);
+			int action_pos = Get_Action_Position(p_action_axis->Get_Button_Action_Min());
+			if (action_pos >= 0)
+				SendMessage(hwnd_butt1, CB_SETCURSEL, (WPARAM)action_pos, (LPARAM)0);
 			EnableWindow(hwnd_butt1, is_button1);
-
-			SendMessage(hwnd_butt2, CB_SETCURSEL, (WPARAM)p_action_axis->Get_Button_Action_Max(), (LPARAM)0);
+			action_pos = Get_Action_Position(p_action_axis->Get_Button_Action_Max());
+			if (action_pos >= 0)
+				SendMessage(hwnd_butt2, CB_SETCURSEL, (WPARAM)action_pos, (LPARAM)0);
 			EnableWindow(hwnd_butt2, is_button2);
 
 		}
@@ -636,16 +1174,21 @@ static void JoyConfig_Refresh_Axes(HWND hwndDlg, BOOL joy_changed, BOOL axis_typ
 }
 
 
-//______________________________________________
-static void JoyConfig_Axis_SetType(HWND hwndDlg) {
+//__________________________________
+static void JoyConfig_Axis_SetType() {
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	if (!hWin_Config_Joy)
+		return;
+	if (!hWin_Config_Joy_Control)
+		return;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return;
-	HWND hwnd_axis = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_AXIS);
+	HWND hwnd_axis = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_AXIS);
 	if (!hwnd_axis)
 		return;
-	HWND hwnd_type = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_AXIS_TYPE);
+	HWND hwnd_type = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_AXIS_TYPE);
 	if (!hwnd_type)
 		return;
 
@@ -658,22 +1201,27 @@ static void JoyConfig_Axis_SetType(HWND hwndDlg) {
 	ACTION_AXIS* p_action_axis = p_joy_selected->Get_Action_Axis(axis_selected);
 	if (!p_action_axis)
 		return;
-	int axis_type = (int)(SendMessage(hwnd_type, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
-	p_action_axis->Set_Axis_As((AXIS_TYPE)axis_type);
-	JoyConfig_Refresh_Axes(hwndDlg, FALSE, TRUE);
+	AXIS_TYPE axis_type = Get_Axis_Type((int)(SendMessage(hwnd_type, CB_GETCURSEL, (WPARAM)0, (LPARAM)0)));
+	p_action_axis->Set_Axis_As(axis_type);
+	JoyConfig_Refresh_Axes(FALSE, TRUE);
 }
 
 
-//______________________________________________
-static void JoyConfig_Axis_SetSign(HWND hwndDlg) {
+//__________________________________
+static void JoyConfig_Axis_SetSign() {
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	if (!hWin_Config_Joy)
+		return;
+	if (!hWin_Config_Joy_Control)
+		return;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return;
-	HWND hwnd_axis = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_AXIS);
+	HWND hwnd_axis = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_AXIS);
 	if (!hwnd_axis)
 		return;
-	HWND hwnd_sign = GetDlgItem(hwndDlg, IDC_CHECK_SELECTED_AXIS_SIGN);
+	HWND hwnd_sign = GetDlgItem(hWin_Config_Joy_Control, IDC_CHECK_SELECTED_AXIS_SIGN);
 	if (!hwnd_sign)
 		return;
 
@@ -696,16 +1244,21 @@ static void JoyConfig_Axis_SetSign(HWND hwndDlg) {
 }
 
 
-//__________________________________________________________________
-static void JoyConfig_Axis_SetButton(HWND hwndDlg, DWORD IDC_BUTTON) {
+//____________________________________________________
+static void JoyConfig_Axis_SetButton(DWORD IDC_BUTTON) {
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	if (!hWin_Config_Joy)
+		return;
+	if (!hWin_Config_Joy_Control)
+		return;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return;
-	HWND hwnd_axis = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_AXIS);
+	HWND hwnd_axis = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_AXIS);
 	if (!hwnd_axis)
 		return;
-	HWND hwnd_button = GetDlgItem(hwndDlg, IDC_BUTTON);
+	HWND hwnd_button = GetDlgItem(hWin_Config_Joy_Control, IDC_BUTTON);
 	if (!hwnd_button)
 		return;
 
@@ -718,21 +1271,27 @@ static void JoyConfig_Axis_SetButton(HWND hwndDlg, DWORD IDC_BUTTON) {
 	ACTION_AXIS* p_action_axis = p_joy_selected->Get_Action_Axis(axis_selected);
 	if (!p_action_axis)
 		return;
-	WC4_ACTIONS action = (WC4_ACTIONS)(SendMessage(hwnd_button, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
-	if (IDC_BUTTON == IDC_COMBO_SELECT_AXIS_BUTTON1)
-		p_action_axis->Set_Button_Action_Min(action);
-	else if (IDC_BUTTON == IDC_COMBO_SELECT_AXIS_BUTTON2)
-		p_action_axis->Set_Button_Action_Max(action);
+
+	WC4_ACTIONS action = Get_Action(SendMessage(hwnd_button, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
+	if (action != WC4_ACTIONS::End) {
+		if (IDC_BUTTON == IDC_COMBO_SELECT_AXIS_BUTTON1)
+			p_action_axis->Set_Button_Action_Min(action);
+		else if (IDC_BUTTON == IDC_COMBO_SELECT_AXIS_BUTTON2)
+			p_action_axis->Set_Button_Action_Max(action);
+	}
 }
 
 
-//_________________________________________________
-static void JoyConfig_Refresh_Enabled(HWND hwndDlg) {
+//_____________________________________
+static void JoyConfig_Refresh_Enabled() {
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	if (!hWin_Config_Joy)
+		return;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return;
-	HWND hwnd_enabled = GetDlgItem(hwndDlg, IDC_CHECK_JOY_ENABLE);
+	HWND hwnd_enabled = GetDlgItem(hWin_Config_Joy, IDC_CHECK_JOY_ENABLE);
 	if (!hwnd_enabled)
 		return;
 
@@ -749,13 +1308,16 @@ static void JoyConfig_Refresh_Enabled(HWND hwndDlg) {
 }
 
 
-//________________________________________________
-static void JoyConfig_Update_Enabled(HWND hwndDlg) {
+//____________________________________
+static void JoyConfig_Update_Enabled() {
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	if (!hWin_Config_Joy)
+		return;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return;
-	HWND hwnd_enabled = GetDlgItem(hwndDlg, IDC_CHECK_JOY_ENABLE);
+	HWND hwnd_enabled = GetDlgItem(hWin_Config_Joy, IDC_CHECK_JOY_ENABLE);
 	if (!hwnd_enabled)
 		return;
 
@@ -773,13 +1335,16 @@ static void JoyConfig_Update_Enabled(HWND hwndDlg) {
 }
 
 
-//____________________________________________
-static bool JoyConfig_Preset_Set(HWND hwndDlg) {
+//________________________________
+static bool JoyConfig_Preset_Set() {
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	if (!hWin_Config_Joy)
+		return false;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return false;
-	HWND hwnd_presets = GetDlgItem(hwndDlg, IDC_COMBO_JOY_PRESETS);
+	HWND hwnd_presets = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_PRESETS);
 	if (!hwnd_presets)
 		return false;
 	int preset_selected = (int)(SendMessage(hwnd_presets, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
@@ -801,7 +1366,7 @@ static bool JoyConfig_Preset_Set(HWND hwndDlg) {
 	swprintf_s(vid_pid_name, L"%04x%04x_", p_joy_selected->Get_VID(), p_joy_selected->Get_PID());
 
 	file_path.append(vid_pid_name);
-	
+
 	SendMessage(hwnd_presets, CB_GETLBTEXT, (WPARAM)preset_selected, (LPARAM)general_string_buff);
 	file_path.append(general_string_buff);
 	file_path.append(L".joy");
@@ -885,7 +1450,6 @@ static INT_PTR CALLBACK DialogProc_SaveAsPreset(HWND hwndDlg, UINT uMsg, WPARAM 
 			}
 			break;
 		case IDOK: {
-			
 			std::wstring file_path;
 			if (!Get_Joystick_Config_Path(&file_path)) {
 				DestroyWindow(hwndDlg);
@@ -953,10 +1517,13 @@ static INT_PTR CALLBACK DialogProc_SaveAsPreset(HWND hwndDlg, UINT uMsg, WPARAM 
 }
 
 
-//_____________________________________________
-static bool JoyConfig_Preset_Save(HWND hwndDlg) {
+//_________________________________
+static bool JoyConfig_Preset_Save() {
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	if (!hWin_Config_Joy)
+		return false;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return false;
 
@@ -965,7 +1532,7 @@ static bool JoyConfig_Preset_Save(HWND hwndDlg) {
 	if (!p_joy_selected)
 		return false;
 
-	hWin_SaveAsPreset = CreateDialogParam(phinstDLL, MAKEINTRESOURCE(IDD_DIALOG_SAVE_AS_PRESET), hwndDlg, (DLGPROC)DialogProc_SaveAsPreset, (LPARAM)p_joy_selected);
+	hWin_SaveAsPreset = CreateDialogParam(phinstDLL, MAKEINTRESOURCE(IDD_DIALOG_SAVE_AS_PRESET), hWin_Config_Joy, (DLGPROC)DialogProc_SaveAsPreset, (LPARAM)p_joy_selected);
 	ShowWindow(hWin_SaveAsPreset, SW_SHOW);
 	while (hWin_SaveAsPreset != nullptr) {
 		Sleep(16);
@@ -980,13 +1547,18 @@ static bool JoyConfig_Preset_Save(HWND hwndDlg) {
 
 	return true;
 }
-//_________________________________________________
-static bool JoyConfig_Refresh_Presets(HWND hwndDlg) {
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+
+//_____________________________________
+static bool JoyConfig_Refresh_Presets() {
+
+	if (!hWin_Config_Joy)
+		return false;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return false;
-	HWND hwnd_presets = GetDlgItem(hwndDlg, IDC_COMBO_JOY_PRESETS);
+	HWND hwnd_presets = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_PRESETS);
 	if (!hwnd_presets)
 		return false;
 	SendMessage(hwnd_presets, CB_RESETCONTENT, (WPARAM)0, (LPARAM)0);
@@ -1031,10 +1603,10 @@ static bool JoyConfig_Refresh_Presets(HWND hwndDlg) {
 
 	std::wstring name;
 	do {
-		name = &FindFileData.cFileName[9]; 
+		name = &FindFileData.cFileName[9];
 		name.at(name.find_last_of(L'.')) = L'\0';
 		SendMessage(hwnd_presets, CB_ADDSTRING, (WPARAM)0, (LPARAM)name.c_str());
-			
+
 	} while (FindNextFile(hFind, &FindFileData));
 
 	FindClose(hFind);
@@ -1051,16 +1623,17 @@ void JoyConfig_Refresh_JoyList() {
 }
 
 
-//_________________________________________________
-static void JoyConfig_JoyList_Refresh(HWND hwndDlg) {
-	if (!hwndDlg)
+//_____________________________________
+static void JoyConfig_JoyList_Refresh() {
+
+	if (!hWin_Config_Joy)
 		return;
 	if (joyList_Updated <= 0)
 		return;
-	
+
 	current_JoySelected = -1;
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return;
 
@@ -1084,22 +1657,27 @@ static void JoyConfig_JoyList_Refresh(HWND hwndDlg) {
 	SendMessage(hwnd_joy, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
 
 
-	JoyConfig_Refresh_Presets(hwndDlg);
-	JoyConfig_Refresh_Enabled(hwndDlg);
-	JoyConfig_Refresh_Axes(hwndDlg, TRUE, TRUE);
-	JoyConfig_Refresh_Buttons(hwndDlg, TRUE);
-	JoyConfig_Refresh_Switches(hwndDlg, TRUE, TRUE);
+	JoyConfig_Refresh_Presets();
+	JoyConfig_Refresh_Enabled();
+	JoyConfig_Refresh_Axes(TRUE, TRUE);
+	JoyConfig_Refresh_Buttons(TRUE);
+	JoyConfig_Refresh_Switches(TRUE, TRUE);
 
 	if (joyList_Updated > 0)
 		joyList_Updated--;
 }
 
 
-//_____________________________________________________
+//_________________________________________
 //Brings a particular contoller state into focus, when it's corresponding button, axis or switch is manipulated.
-static void Update_Controller_State_Focus(HWND hwndDlg) {
+static void Update_Controller_State_Focus() {
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	if (!hWin_Config_Joy)
+		return;
+	if (!hWin_Config_Joy_Control)
+		return;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return;
 	int joy_selected = (int)(SendMessage(hwnd_joy, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
@@ -1119,7 +1697,7 @@ static void Update_Controller_State_Focus(HWND hwndDlg) {
 		current_JoySelected = joy_selected;
 
 		current_num_axes = p_joy_selected->Axes(&axes);
-		
+
 		if (current_axisArray)
 			delete[] current_axisArray;
 		current_axisArray = nullptr;
@@ -1128,7 +1706,6 @@ static void Update_Controller_State_Focus(HWND hwndDlg) {
 			for (int i = 0; i < current_num_axes; i++)
 				current_axisArray[i] = axes[i];
 		}
-
 
 		current_num_buttons = p_joy_selected->Buttons(&buttons);
 
@@ -1141,7 +1718,6 @@ static void Update_Controller_State_Focus(HWND hwndDlg) {
 				current_buttonArray[i] = buttons[i];
 		}
 
-
 		current_num_switches = p_joy_selected->Switches(&switches);
 
 		if (current_switchArray)
@@ -1152,7 +1728,6 @@ static void Update_Controller_State_Focus(HWND hwndDlg) {
 			for (int i = 0; i < current_num_switches; i++)
 				current_switchArray[i] = switches[i];
 		}
-
 	}
 	else {
 		//compare current controller states against new input.
@@ -1167,13 +1742,12 @@ static void Update_Controller_State_Focus(HWND hwndDlg) {
 		}
 		if (axis_changed >= 0) {
 			//Debug_Info("Check_For_Changes - axis changed:%d", axis_changed);
-			HWND hwnd_axis = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_AXIS);
+			HWND hwnd_axis = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_AXIS);
 			SendMessage(hwnd_axis, CB_SETCURSEL, (WPARAM)axis_changed, (LPARAM)0);
 			SetFocus(hwnd_axis);
-			JoyConfig_Refresh_Axes(hwndDlg, FALSE, TRUE);
+			JoyConfig_Refresh_Axes(FALSE, TRUE);
 		}
-		
-		
+
 		int num_buttons = p_joy_selected->Buttons(&buttons);
 		if (num_buttons > 0 && num_buttons == current_num_buttons) {
 			for (int i = 0; i < current_num_buttons; i++) {
@@ -1182,14 +1756,14 @@ static void Update_Controller_State_Focus(HWND hwndDlg) {
 				current_buttonArray[i] = buttons[i];
 			}
 		}
+
 		if (butt_changed >= 0) {
 			//Debug_Info("Check_For_Changes - butt changed:%d", butt_changed);
-			HWND hwnd_selected_button = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_BUTTONS);
+			HWND hwnd_selected_button = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_BUTTONS);
 			SendMessage(hwnd_selected_button, CB_SETCURSEL, (WPARAM)butt_changed, (LPARAM)0);
 			SetFocus(hwnd_selected_button);
-			JoyConfig_Refresh_Buttons(hwndDlg, FALSE);
+			JoyConfig_Refresh_Buttons(FALSE);
 		}
-
 
 		int num_switches = p_joy_selected->Switches(&switches);
 		if (num_switches > 0 && num_switches == current_num_switches) {
@@ -1199,22 +1773,22 @@ static void Update_Controller_State_Focus(HWND hwndDlg) {
 				current_switchArray[i] = switches[i];
 			}
 		}
+
 		if (switch_changed >= 0) {
 			//Debug_Info("Check_For_Changes - switch changed:%d", switch_changed);
-			HWND hwnd_selected_switch = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_SWITCHES);
+			HWND hwnd_selected_switch = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_SWITCHES);
 			SendMessage(hwnd_selected_switch, CB_SETCURSEL, (WPARAM)switch_changed, (LPARAM)0);
 			SetFocus(hwnd_selected_switch);
-			JoyConfig_Refresh_Switches(hwndDlg, FALSE, TRUE);
+			JoyConfig_Refresh_Switches(FALSE, TRUE);
 		}
 	}
-
 }
 
 
 //_________________________________________
 static void JoyConfig_Refresh(HWND hwndDlg) {
 
-	JoyConfig_JoyList_Refresh(hwndDlg);
+	JoyConfig_JoyList_Refresh();
 
 	HWND hwnd_sub = nullptr;
 
@@ -1253,11 +1827,11 @@ static void JoyConfig_Refresh(HWND hwndDlg) {
 	MoveWindow(hwnd_sub, pt.x + 1, pt.y + 1 + pos_y, 9, 3, TRUE);
 
 
-	Update_Controller_State_Focus(hwndDlg);
+	Update_Controller_State_Focus();
 
-	JoyConfig_Refresh_Axis_Display(hwndDlg);
-	JoyConfig_Refresh_Button_Display(hwndDlg);
-	JoyConfig_Refresh_Switch_Display(hwndDlg);
+	JoyConfig_Refresh_Axis_Display();
+	JoyConfig_Refresh_Button_Display();
+	JoyConfig_Refresh_Switch_Display();
 }
 
 
@@ -1329,19 +1903,25 @@ static INT_PTR CALLBACK DialogProc_AxisCalibration(HWND hwndDlg, UINT uMsg, WPAR
 	return FALSE;
 }
 
-//________________________________________________
-static void JoyConfig_Axis_Calibrate(HWND hwndDlg) {
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+//____________________________________
+static void JoyConfig_Axis_Calibrate() {
+
+	if (!hWin_Config_Joy)
+		return;
+	if (!hWin_Config_Joy_Control)
+		return;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return;
-	HWND hwnd_axis = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_AXIS);
+	HWND hwnd_axis = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_AXIS);
 	if (!hwnd_axis)
 		return;
 
 	int calibrating_joy = (int)(SendMessage(hwnd_joy, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
 	JOYSTICK* p_joy_selected = Joysticks.GetJoy(calibrating_joy);
-	if (!p_joy_selected) 
+	if (!p_joy_selected)
 		return;
 	int	calibrating_axis = (int)(SendMessage(hwnd_axis, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
 	ACTION_AXIS* p_action_axis = p_joy_selected->Get_Action_Axis(calibrating_axis);
@@ -1349,7 +1929,7 @@ static void JoyConfig_Axis_Calibrate(HWND hwndDlg) {
 		return;
 	p_action_axis->Calibrate(TRUE);
 
-	hWin_AxisCalibrate = CreateDialog(phinstDLL, MAKEINTRESOURCE(IDD_DIALOG_CALIBRATE), hwndDlg, (DLGPROC)DialogProc_AxisCalibration);
+	hWin_AxisCalibrate = CreateDialog(phinstDLL, MAKEINTRESOURCE(IDD_DIALOG_CALIBRATE), hWin_Config_Joy, (DLGPROC)DialogProc_AxisCalibration);
 	ShowWindow(hWin_AxisCalibrate, SW_SHOW);
 	while (hWin_AxisCalibrate != nullptr) {
 		Sleep(16);
@@ -1372,18 +1952,21 @@ static void JoyConfig_Axis_Calibrate(HWND hwndDlg) {
 	if (!p_action_axis)
 		return;
 	p_action_axis->Calibrate(FALSE);
-
-
 }
 
 
-//_____________________________________________
-static void JoyConfig_Axis_Centre(HWND hwndDlg) {
+//_________________________________
+static void JoyConfig_Axis_Centre() {
 
-	HWND hwnd_joy = GetDlgItem(hwndDlg, IDC_COMBO_JOY_SELECT);
+	if (!hWin_Config_Joy)
+		return;
+	if (!hWin_Config_Joy_Control)
+		return;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
 	if (!hwnd_joy)
 		return;
-	HWND hwnd_axis = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_AXIS);
+	HWND hwnd_axis = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_AXIS);
 	if (!hwnd_axis)
 		return;
 
@@ -1402,6 +1985,182 @@ static void JoyConfig_Axis_Centre(HWND hwndDlg) {
 }
 
 
+//_________________________________________
+static void JoyConfig_Update_Profile_Vars() {
+
+	if (!hWin_Config_Joy)
+		return;
+	if (!hWin_Config_Joy_Control)
+		return;
+
+	HWND hwnd_joy = GetDlgItem(hWin_Config_Joy, IDC_COMBO_JOY_SELECT);
+	if (!hwnd_joy)
+		return;
+	HWND hwnd_axis = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_AXIS);
+	if (!hwnd_axis)
+		return;
+
+	HWND hwnd_sub = nullptr;
+	RECT rc{};
+	POINT pt{};
+
+	//fill text for axis type combo
+	hwnd_sub = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_AXIS_TYPE);
+
+	//AXIS_TYPE_UID
+	AXIS_TYPE* axis_types = axes_Space;
+	int axis_type_count = _countof(axes_Space);
+	WC4_ACTIONS* actions = actions_space;
+	int actions_count = _countof(actions_space);
+	if (current_pro_type == PROFILE_TYPE::GUI) {
+		axis_types = axes_GUI;
+		axis_type_count = _countof(axes_GUI);
+		actions = actions_gui;
+		actions_count = _countof(actions_gui);
+	}
+	else if (current_pro_type == PROFILE_TYPE::NAV) {
+		axis_types = axes_NAV;
+		axis_type_count = _countof(axes_NAV);
+		actions = actions_nav;
+		actions_count = _countof(actions_nav);
+	}
+	SendMessage(hwnd_sub, CB_RESETCONTENT, (WPARAM)0, (LPARAM)0);
+	for (int i = 0; i < axis_type_count; i++) {
+		LoadString(phinstDLL, AXIS_TYPE_UID[static_cast<int>(axis_types[i])], general_string_buff, _countof(general_string_buff));
+		SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
+	}
+	SendMessage(hwnd_sub, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
+
+
+	HWND hwnd_axis_act1 = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_AXIS_BUTTON1);
+	SendMessage(hwnd_axis_act1, CB_RESETCONTENT, (WPARAM)0, (LPARAM)0);
+	HWND hwnd_axis_act2 = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_AXIS_BUTTON2);
+	SendMessage(hwnd_axis_act2, CB_RESETCONTENT, (WPARAM)0, (LPARAM)0);
+	HWND hwnd_butt_act = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_BUTTON_ACTION);
+	SendMessage(hwnd_butt_act, CB_RESETCONTENT, (WPARAM)0, (LPARAM)0);
+	HWND hwnd_switch_act = GetDlgItem(hWin_Config_Joy_Control, IDC_COMBO_SELECT_SWITCH_ACTION);
+	SendMessage(hwnd_switch_act, CB_RESETCONTENT, (WPARAM)0, (LPARAM)0);
+
+	//speed up combobox initialization by preventing drawing while adding strings.
+	SetWindowRedraw(hwnd_axis_act1, FALSE);
+	SetWindowRedraw(hwnd_axis_act2, FALSE);
+	SetWindowRedraw(hwnd_butt_act, FALSE);
+	SetWindowRedraw(hwnd_switch_act, FALSE);
+
+	//speed up combobox initialization by setting the count and estimated memory usage first. 
+	SendMessage(hwnd_axis_act1, CB_INITSTORAGE, actions_count, sizeof(general_string_buff) * actions_count);
+	SendMessage(hwnd_axis_act2, CB_INITSTORAGE, actions_count, sizeof(general_string_buff) * actions_count);
+	SendMessage(hwnd_butt_act, CB_INITSTORAGE, actions_count, sizeof(general_string_buff) * actions_count);
+	SendMessage(hwnd_switch_act, CB_INITSTORAGE, actions_count, sizeof(general_string_buff) * actions_count);
+
+	//fill text for action combo's
+	for (int i = 0; i < actions_count; i++) {
+		//
+		LoadString(phinstDLL, WC4_ACTION_UID[static_cast<int>(actions[i])], general_string_buff, _countof(general_string_buff));
+		SendMessage(hwnd_axis_act1, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
+		SendMessage(hwnd_axis_act2, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
+		SendMessage(hwnd_butt_act, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
+		SendMessage(hwnd_switch_act, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
+	}
+
+	SetWindowRedraw(hwnd_axis_act1, TRUE);
+	SetWindowRedraw(hwnd_axis_act2, TRUE);
+	SetWindowRedraw(hwnd_butt_act, TRUE);
+	SetWindowRedraw(hwnd_switch_act, TRUE);
+
+	//Debug_Info("_countof(P2_ACTION_UID) %d", _countof(P2_ACTION_UID));
+	SendMessage(hwnd_axis_act1, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
+	SendMessage(hwnd_axis_act2, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
+}
+
+
+//__________________________________________________________________________________________________________
+static INT_PTR CALLBACK DialogProc_Config_Joy_Control(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+
+	switch (uMsg) {
+	case WM_INITDIALOG: {
+
+		InitCommonControls();
+
+		hWin_Config_Joy_Control = hwndDlg;
+
+		JoyConfig_Refresh_Axes(TRUE, TRUE);
+		JoyConfig_Refresh_Buttons(TRUE);
+		JoyConfig_Refresh_Switches(TRUE, TRUE);
+
+		JoyConfig_Update_Profile_Vars();
+		return TRUE;
+	}
+	case WM_COMMAND:
+		switch (LOWORD(wParam)) {
+
+		case IDC_COMBO_SELECT_AXIS:
+			if (HIWORD(wParam) == CBN_SELCHANGE)
+				JoyConfig_Refresh_Axes(FALSE, TRUE);
+
+			return TRUE;
+		case IDC_COMBO_SELECT_AXIS_TYPE:
+			if (HIWORD(wParam) == CBN_SELCHANGE)
+				JoyConfig_Axis_SetType();
+			return TRUE;
+		case IDC_CHECK_SELECTED_AXIS_SIGN:
+			if (HIWORD(wParam) == BN_CLICKED)
+				JoyConfig_Axis_SetSign();
+			return TRUE;
+		case IDC_COMBO_SELECT_AXIS_BUTTON1:
+		case IDC_COMBO_SELECT_AXIS_BUTTON2:
+			if (HIWORD(wParam) == CBN_SELCHANGE)
+				JoyConfig_Axis_SetButton(LOWORD(wParam));
+			return TRUE;
+		case IDC_BUTTON_CALIBRATE_AXIS:
+			JoyConfig_Axis_Calibrate();
+			return TRUE;
+		case IDC_BUTTON_CENTRE_AXIS: {
+			JoyConfig_Axis_Centre();
+			return TRUE;
+		}
+
+		case IDC_COMBO_SELECT_BUTTONS:
+			if (HIWORD(wParam) == CBN_SELCHANGE)
+				JoyConfig_Refresh_Buttons(FALSE);
+			return TRUE;
+
+		case IDC_COMBO_SELECT_BUTTON_ACTION:
+			if (HIWORD(wParam) == CBN_SELCHANGE)
+				JoyConfig_Button_SetButton();
+			return TRUE;
+
+
+		case IDC_COMBO_SELECT_SWITCHES:
+			if (HIWORD(wParam) == CBN_SELCHANGE)
+				JoyConfig_Refresh_Switches(FALSE, TRUE);
+			return TRUE;
+		case IDC_COMBO_SELECT_SWITCH_POS:
+			if (HIWORD(wParam) == CBN_SELCHANGE)
+				JoyConfig_Refresh_Switches(FALSE, FALSE);
+			return TRUE;
+		case IDC_COMBO_SELECT_SWITCH_ACTION:
+			if (HIWORD(wParam) == CBN_SELCHANGE)
+				JoyConfig_Switch_SetButton();
+			return TRUE;
+
+		default:
+			break;
+		}
+		break;
+	case WM_DESTROY: {
+		hWin_Config_Joy_Control = nullptr;
+		return FALSE;
+	}
+	default:
+		return FALSE;
+		break;
+	}
+
+	return TRUE;
+}
+
+
 //_________________________________________________________________________________________________
 static INT_PTR CALLBACK DialogProc_JoyConfig(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
@@ -1412,12 +2171,8 @@ static INT_PTR CALLBACK DialogProc_JoyConfig(HWND hwndDlg, UINT uMsg, WPARAM wPa
 
 		hWin_Config_Joy = hwndDlg;
 
-		JoyConfig_Refresh_Presets(hwndDlg);
-		JoyConfig_Refresh_Enabled(hwndDlg);
-
-		JoyConfig_Refresh_Axes(hwndDlg, TRUE, TRUE);
-		JoyConfig_Refresh_Buttons(hwndDlg, TRUE);
-		JoyConfig_Refresh_Switches(hwndDlg, TRUE, TRUE);
+		JoyConfig_Refresh_Presets();
+		JoyConfig_Refresh_Enabled();
 
 		HWND hwnd_sub = nullptr;
 		RECT rc{};
@@ -1436,44 +2191,57 @@ static INT_PTR CALLBACK DialogProc_JoyConfig(HWND hwndDlg, UINT uMsg, WPARAM wPa
 		ScreenToClient(hwndDlg, &pt);
 		MoveWindow(hwnd_sub, pt.x, pt.y, 9 + 2, rc.bottom - rc.top, TRUE);
 
-		//fill text for axis type combo
-		hwnd_sub = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_AXIS_TYPE);
+		INITCOMMONCONTROLSEX iccex{ 0 };
+		//initialize common controls.
+		iccex.dwSize = sizeof(INITCOMMONCONTROLSEX);
+		iccex.dwICC = ICC_TAB_CLASSES;
+		InitCommonControlsEx(&iccex);
 
-		//AXIS_TYPE_UID
+		TCITEM tie{ 0 };
 
-		for (int i = 0; i < _countof(AXIS_TYPE_UID); i++) {
-			LoadString(phinstDLL, AXIS_TYPE_UID[i], general_string_buff, _countof(general_string_buff));
-			SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
-		}
-		SendMessage(hwnd_sub, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
+		HWND hwndTab = GetDlgItem(hwndDlg, IDC_TAB_JOY_CONTROL);
+		//add a tab for each of the child dialog boxes.
+		tie.mask = TCIF_TEXT | TCIF_IMAGE;
+		tie.iImage = -1;
 
+		LoadString(phinstDLL, IDS_TAB_GUI, general_string_buff, _countof(general_string_buff));
+		tie.pszText = general_string_buff;
+		TabCtrl_InsertItem(hwndTab, 0, &tie);
 
-		HWND hwnd_axis_act1 = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_AXIS_BUTTON1);
-		HWND hwnd_axis_act2 = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_AXIS_BUTTON2);
-		HWND hwnd_butt_act = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_BUTTON_ACTION);
-		HWND hwnd_switch_act = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_SWITCH_ACTION);
+		LoadString(phinstDLL, IDS_TAB_NAV, general_string_buff, _countof(general_string_buff));
+		tie.pszText = general_string_buff;
+		TabCtrl_InsertItem(hwndTab, 1, &tie);
 
-		//fill text for action combo's
-		//LoadString(phinstDLL, IDS_NONE, general_string_buff, _countof(general_string_buff));
-		for (int i = 0; i < _countof(WC4_ACTION_UID); i++) {
-			//
-			LoadString(phinstDLL, WC4_ACTION_UID[i], general_string_buff, _countof(general_string_buff));
-			SendMessage(hwnd_axis_act1, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
-			SendMessage(hwnd_axis_act2, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
-			SendMessage(hwnd_butt_act, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
-			SendMessage(hwnd_switch_act, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
-		}
-		//Debug_Info("_countof(WC4_ACTION_UID) %d", _countof(WC4_ACTION_UID));
-		SendMessage(hwnd_axis_act1, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
-		SendMessage(hwnd_axis_act2, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
-		SendMessage(hwnd_butt_act, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
-		SendMessage(hwnd_switch_act, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
+		LoadString(phinstDLL, IDS_TAB_SPACE, general_string_buff, _countof(general_string_buff));
+		tie.pszText = general_string_buff;
+		TabCtrl_InsertItem(hwndTab, 2, &tie);
+
+		LoadString(phinstDLL, IDS_TAB_REMAP_1, general_string_buff, _countof(general_string_buff));
+		tie.pszText = general_string_buff;
+		TabCtrl_InsertItem(hwndTab, 3, &tie);
+		LoadString(phinstDLL, IDS_TAB_REMAP_2, general_string_buff, _countof(general_string_buff));
+		tie.pszText = general_string_buff;
+		TabCtrl_InsertItem(hwndTab, 4, &tie);
+		LoadString(phinstDLL, IDS_TAB_REMAP_3, general_string_buff, _countof(general_string_buff));
+		tie.pszText = general_string_buff;
+		TabCtrl_InsertItem(hwndTab, 5, &tie);
+
+		//create tab windows.
+		hWin_Config_Joy_Control = CreateDialogParam(phinstDLL, MAKEINTRESOURCE(IDD_DIALOG_JOY_CONTROLS), hwndDlg, &DialogProc_Config_Joy_Control, 0);
+
+		//set the position of tab windows, adjusting for the height of the tabs.
+		RECT rcTab;
+		GetWindowRect(hwndTab, &rcTab);
+		MapWindowPoints(HWND_DESKTOP, hwndDlg, (LPPOINT)&rcTab, 2);
+		TabCtrl_AdjustRect(hwndTab, FALSE, &rcTab);
+
+		SetWindowPos(hWin_Config_Joy_Control, nullptr, rcTab.left, rcTab.top, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+
+		TabCtrl_SetCurFocus(hwndTab, static_cast<int>(current_pro_type));
+		ShowWindow(hWin_Config_Joy_Control, SW_SHOW);
 
 		hwnd_sub = GetDlgItem(hwndDlg, IDC_COMBO_DEAD_ZONE);
-
-
-		//mark deadzone levels as percentages for easier reading. 6.25% == 2/32 of axis from centre.
-		//increased deadzone options by a factor of 2.
+		//wc axes have 16 degrees of movement from centre, mark deadzone levels as percentages for easier reading. 6.25% == 1/16 of axis from centre.
 		SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)L"0%");
 		SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)L"3.125%");
 		SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)L"6.25%");
@@ -1490,35 +2258,73 @@ static INT_PTR CALLBACK DialogProc_JoyConfig(HWND hwndDlg, UINT uMsg, WPARAM wPa
 
 		return TRUE;
 	}
+	case WM_NOTIFY:
+		switch (((LPNMHDR)lParam)->code) {
+		case TCN_SELCHANGE: {
+			HWND hwndTab = GetDlgItem(hwndDlg, IDC_TAB_JOY_CONTROL);
+			int tabNum = TabCtrl_GetCurSel(hwndTab);
+			if (tabNum == 0)
+				current_pro_type = PROFILE_TYPE::GUI;
+			else if (tabNum == 1)
+				current_pro_type = PROFILE_TYPE::NAV;
+			else if (tabNum == 2)
+				current_pro_type = PROFILE_TYPE::Space;
+			else if (tabNum == 3)
+				current_pro_type = PROFILE_TYPE::ReMap_1;
+			else if (tabNum == 4)
+				current_pro_type = PROFILE_TYPE::ReMap_2;
+			else if (tabNum == 5)
+				current_pro_type = PROFILE_TYPE::ReMap_3;
+			JoyConfig_Update_Profile_Vars();
+			JoyConfig_Refresh_Axes(FALSE, TRUE);
+			JoyConfig_Refresh_Buttons(FALSE);
+			JoyConfig_Refresh_Switches(FALSE, TRUE);
+			break;
+		}
+		default:
+			break;
+		}
+		break;
+	case WM_MOVE: {
+		HWND hwndTab = GetDlgItem(hwndDlg, IDC_TAB_JOY_CONTROL);
+		//move tab windows with the main window, adjusting for the height of the tabs.
+		RECT rcTab;
+		GetWindowRect(hwndTab, &rcTab);
+		MapWindowPoints(HWND_DESKTOP, hwndDlg, (LPPOINT)&rcTab, 2);
+		TabCtrl_AdjustRect(hwndTab, FALSE, &rcTab);
+
+		SetWindowPos(hWin_Config_Joy_Control, nullptr, rcTab.left, rcTab.top, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+		return TRUE;
+	}
 	case WM_COMMAND:
 		switch (LOWORD(wParam)) {
 		case IDC_COMBO_JOY_SELECT:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
-				JoyConfig_Refresh_Presets(hwndDlg);
-				JoyConfig_Refresh_Enabled(hwndDlg);
-				JoyConfig_Refresh_Axes(hwndDlg, TRUE, TRUE);
-				JoyConfig_Refresh_Buttons(hwndDlg, TRUE);
-				JoyConfig_Refresh_Switches(hwndDlg, TRUE, TRUE);
+				JoyConfig_Refresh_Presets();
+				JoyConfig_Refresh_Enabled();
+				JoyConfig_Refresh_Axes(TRUE, TRUE);
+				JoyConfig_Refresh_Buttons(TRUE);
+				JoyConfig_Refresh_Switches(TRUE, TRUE);
 			}
 			return TRUE;
 		case IDC_COMBO_JOY_PRESETS:
 			if (HIWORD(wParam) == CBN_SELCHANGE)
-				if (JoyConfig_Preset_Set(hwndDlg)) {
-					JoyConfig_Refresh_Enabled(hwndDlg);
-					JoyConfig_Refresh_Axes(hwndDlg, TRUE, TRUE);
-					JoyConfig_Refresh_Buttons(hwndDlg, TRUE);
-					JoyConfig_Refresh_Switches(hwndDlg, TRUE, TRUE);
+				if (JoyConfig_Preset_Set()) {
+					JoyConfig_Refresh_Enabled();
+					JoyConfig_Refresh_Axes(TRUE, TRUE);
+					JoyConfig_Refresh_Buttons(TRUE);
+					JoyConfig_Refresh_Switches(TRUE, TRUE);
 				}
 			return TRUE;
 		case IDC_BUTTON_SAVE_PRESET:
-			if (JoyConfig_Preset_Save(hwndDlg)) 
-				JoyConfig_Refresh_Presets(hwndDlg);
+			if (JoyConfig_Preset_Save())
+				JoyConfig_Refresh_Presets();
 			return TRUE;
 		case IDC_CHECK_JOY_ENABLE:
 			if (HIWORD(wParam) == BN_CLICKED)
-				JoyConfig_Update_Enabled(hwndDlg);
+				JoyConfig_Update_Enabled();
 			return TRUE;
-			
+
 		case IDC_COMBO_DEAD_ZONE:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				int deadzone = (int)(SendMessage(GetDlgItem(hwndDlg, IDC_COMBO_DEAD_ZONE), CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
@@ -1529,62 +2335,36 @@ static INT_PTR CALLBACK DialogProc_JoyConfig(HWND hwndDlg, UINT uMsg, WPARAM wPa
 			Joysticks.Centre_All();
 			return TRUE;
 
-		case IDC_COMBO_SELECT_AXIS:
-			if (HIWORD(wParam) == CBN_SELCHANGE)
-				JoyConfig_Refresh_Axes(hwndDlg, FALSE, TRUE);
-			
-			return TRUE;
-		case IDC_COMBO_SELECT_AXIS_TYPE:
-			if (HIWORD(wParam) == CBN_SELCHANGE)
-				JoyConfig_Axis_SetType(hwndDlg);
-			return TRUE;
-		case IDC_CHECK_SELECTED_AXIS_SIGN:
-			if (HIWORD(wParam) == BN_CLICKED)
-				JoyConfig_Axis_SetSign(hwndDlg);
-			return TRUE;
-		case IDC_COMBO_SELECT_AXIS_BUTTON1:
-		case IDC_COMBO_SELECT_AXIS_BUTTON2:
-			if (HIWORD(wParam) == CBN_SELCHANGE)
-				JoyConfig_Axis_SetButton(hwndDlg, LOWORD(wParam));
-			return TRUE;
-		case IDC_BUTTON_CALIBRATE_AXIS:
-			JoyConfig_Axis_Calibrate(hwndDlg);
-			return TRUE;
-		case IDC_BUTTON_CENTRE_AXIS: {
-			JoyConfig_Axis_Centre(hwndDlg);
-			return TRUE;
-		}
-
-		case IDC_COMBO_SELECT_BUTTONS:
-			if (HIWORD(wParam) == CBN_SELCHANGE)
-				JoyConfig_Refresh_Buttons(hwndDlg, FALSE);
-			return TRUE;
-
-		case IDC_COMBO_SELECT_BUTTON_ACTION:
-			if (HIWORD(wParam) == CBN_SELCHANGE)
-				JoyConfig_Button_SetButton(hwndDlg);
-			return TRUE;
-
-
-		case IDC_COMBO_SELECT_SWITCHES:
-			if (HIWORD(wParam) == CBN_SELCHANGE)
-				JoyConfig_Refresh_Switches(hwndDlg, FALSE, TRUE);
-			return TRUE;
-		case IDC_COMBO_SELECT_SWITCH_POS:
-			if (HIWORD(wParam) == CBN_SELCHANGE)
-				JoyConfig_Refresh_Switches(hwndDlg, FALSE, FALSE);
-			return TRUE;
-		case IDC_COMBO_SELECT_SWITCH_ACTION:
-			if (HIWORD(wParam) == CBN_SELCHANGE)
-				JoyConfig_Switch_SetButton(hwndDlg);
-			return TRUE;
-
 		default:
 			break;
 		}
 		break;
 	case WM_DESTROY: {
 		hWin_Config_Joy = nullptr;
+		return FALSE;
+	}
+	default:
+		return FALSE;
+		break;
+	}
+
+	return TRUE;
+}
+
+
+//_____________________________________________________________________________________________________
+static INT_PTR CALLBACK DialogProc_JoyConfig_Off(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+
+	switch (uMsg) {
+	case WM_INITDIALOG: {
+
+		InitCommonControls();
+
+		hWin_Config_Joy_Off = hwndDlg;
+		return TRUE;
+	}
+	case WM_DESTROY: {
+		hWin_Config_Joy_Off = nullptr;
 		return FALSE;
 	}
 	default:
@@ -1631,6 +2411,185 @@ static void JoyConfig_Refresh_Mouse_Display(HWND hwnd) {
 }
 
 
+//___________________________________________
+static void MouseConfig_Update_Profile_Vars() {
+
+	if (!hWin_Config_Mouse)
+		return;
+	if (!hWin_Config_Mouse_Control)
+		return;
+
+	//fill action selection lists.
+	HWND hwnd_button_actions = GetDlgItem(hWin_Config_Mouse_Control, IDC_COMBO_SELECT_BUTTON_ACTION);
+	SendMessage(hwnd_button_actions, CB_RESETCONTENT, (WPARAM)0, (LPARAM)0);
+	HWND hwnd_wheel_up_actions = GetDlgItem(hWin_Config_Mouse_Control, IDC_COMBO_WHEEL_UP_ACTION);
+	SendMessage(hwnd_wheel_up_actions, CB_RESETCONTENT, (WPARAM)0, (LPARAM)0);
+	HWND hwnd_wheel_down_actions = GetDlgItem(hWin_Config_Mouse_Control, IDC_COMBO_WHEEL_DOWN_ACTION);
+	SendMessage(hwnd_wheel_down_actions, CB_RESETCONTENT, (WPARAM)0, (LPARAM)0);
+	HWND hwnd_wheel_left_actions = GetDlgItem(hWin_Config_Mouse_Control, IDC_COMBO_WHEEL_LEFT_ACTION);
+	SendMessage(hwnd_wheel_left_actions, CB_RESETCONTENT, (WPARAM)0, (LPARAM)0);
+	HWND hwnd_wheel_right_actions = GetDlgItem(hWin_Config_Mouse_Control, IDC_COMBO_WHEEL_RIGHT_ACTION);
+	SendMessage(hwnd_wheel_right_actions, CB_RESETCONTENT, (WPARAM)0, (LPARAM)0);
+
+	WC4_ACTIONS* actions = actions_space_mouse;
+	int actions_count = _countof(actions_space_mouse);
+	if (current_pro_type == PROFILE_TYPE::GUI) {
+		actions = actions_gui_mouse;
+		actions_count = _countof(actions_gui_mouse);
+	}
+	else if (current_pro_type == PROFILE_TYPE::NAV) {
+		actions = actions_nav_mouse;
+		actions_count = _countof(actions_nav_mouse);
+	}
+	//speed up combobox initialization by preventing drawing while adding strings.
+	SetWindowRedraw(hwnd_button_actions, FALSE);
+	SetWindowRedraw(hwnd_wheel_up_actions, FALSE);
+	SetWindowRedraw(hwnd_wheel_down_actions, FALSE);
+	SetWindowRedraw(hwnd_wheel_left_actions, FALSE);
+	SetWindowRedraw(hwnd_wheel_right_actions, FALSE);
+
+	//speed up combobox initialization by setting the count and estimated memory usage first. 
+	SendMessage(hwnd_button_actions, CB_INITSTORAGE, actions_count, sizeof(general_string_buff) * actions_count);
+	SendMessage(hwnd_wheel_up_actions, CB_INITSTORAGE, actions_count, sizeof(general_string_buff) * actions_count);
+	SendMessage(hwnd_wheel_down_actions, CB_INITSTORAGE, actions_count, sizeof(general_string_buff) * actions_count);
+	SendMessage(hwnd_wheel_left_actions, CB_INITSTORAGE, actions_count, sizeof(general_string_buff) * actions_count);
+	SendMessage(hwnd_wheel_right_actions, CB_INITSTORAGE, actions_count, sizeof(general_string_buff) * actions_count);
+
+	for (int i = 0; i < actions_count; i++) {
+		LoadString(phinstDLL, WC4_ACTION_UID[static_cast<int>(actions[i])], general_string_buff, _countof(general_string_buff));
+		SendMessage(hwnd_button_actions, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
+		SendMessage(hwnd_wheel_up_actions, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
+		SendMessage(hwnd_wheel_down_actions, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
+		SendMessage(hwnd_wheel_left_actions, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
+		SendMessage(hwnd_wheel_right_actions, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
+	}
+
+	SetWindowRedraw(hwnd_button_actions, TRUE);
+	SetWindowRedraw(hwnd_wheel_up_actions, TRUE);
+	SetWindowRedraw(hwnd_wheel_down_actions, TRUE);
+	SetWindowRedraw(hwnd_wheel_left_actions, TRUE);
+	SetWindowRedraw(hwnd_wheel_right_actions, TRUE);
+
+	HWND hwnd_button = GetDlgItem(hWin_Config_Mouse_Control, IDC_COMBO_SELECT_BUTTONS);
+	int button_selected = (int)(SendMessage(hwnd_button, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
+	int action_pos = Get_Action_Position_Mouse(Mouse.GetAction_Button(button_selected));
+	if (action_pos >= 0)
+		SendMessage(hwnd_button_actions, CB_SETCURSEL, (WPARAM)action_pos, (LPARAM)0);
+
+	action_pos = Get_Action_Position_Mouse(Mouse.GetAction_Wheel_Up());
+	if (action_pos >= 0)
+		SendMessage(hwnd_wheel_up_actions, CB_SETCURSEL, (WPARAM)action_pos, (LPARAM)0);
+	action_pos = Get_Action_Position_Mouse(Mouse.GetAction_Wheel_Down());
+	if (action_pos >= 0)
+		SendMessage(hwnd_wheel_down_actions, CB_SETCURSEL, (WPARAM)action_pos, (LPARAM)0);
+	action_pos = Get_Action_Position_Mouse(Mouse.GetAction_Wheel_Left());
+	if (action_pos >= 0)
+		SendMessage(hwnd_wheel_left_actions, CB_SETCURSEL, (WPARAM)action_pos, (LPARAM)0);
+	action_pos = Get_Action_Position_Mouse(Mouse.GetAction_Wheel_Right());
+	if (action_pos >= 0)
+		SendMessage(hwnd_wheel_right_actions, CB_SETCURSEL, (WPARAM)action_pos, (LPARAM)0);
+}
+
+
+//____________________________________________________________________________________________________________
+static INT_PTR CALLBACK DialogProc_Config_Mouse_Control(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+
+	switch (uMsg) {
+	case WM_INITDIALOG: {
+
+		InitCommonControls();
+
+		hWin_Config_Mouse_Control = hwndDlg;
+
+		HWND hwnd_sub = nullptr;
+
+		//setup button selection combo.
+		hwnd_sub = GetDlgItem(hWin_Config_Mouse_Control, IDC_COMBO_SELECT_BUTTONS);
+		wchar_t* msg = new wchar_t[12];
+		LoadString(phinstDLL, IDS_BUTTON, general_string_buff, _countof(general_string_buff));
+
+		for (int i = 0; i < NUM_MOUSE_BUTTONS; i++) {
+			swprintf_s(msg, 12, L"%s %d", general_string_buff, i + 1);
+			SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)msg);
+		}
+		delete[] msg;
+		SendMessage(hwnd_sub, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
+
+		MouseConfig_Update_Profile_Vars();
+
+		return TRUE;
+	}
+	case WM_COMMAND:
+		switch (LOWORD(wParam)) {
+		case IDC_COMBO_SELECT_BUTTONS:
+			if (HIWORD(wParam) == CBN_SELCHANGE) {
+				HWND hwnd_button = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_BUTTONS);
+				int button_selected = (int)(SendMessage(hwnd_button, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
+				HWND hwnd_actions = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_BUTTON_ACTION);
+				int action_pos = Get_Action_Position_Mouse(Mouse.GetAction_Button(button_selected));
+				if (action_pos >= 0)
+					SendMessage(hwnd_actions, CB_SETCURSEL, (WPARAM)action_pos, (LPARAM)0);
+			}
+			return TRUE;
+		case IDC_COMBO_SELECT_BUTTON_ACTION:
+			if (HIWORD(wParam) == CBN_SELCHANGE) {
+				HWND hwnd_button = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_BUTTONS);
+				int button_selected = (int)(SendMessage(hwnd_button, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
+				HWND hwnd_action = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_BUTTON_ACTION);
+				WC4_ACTIONS action_selected = Get_Action_Mouse((SendMessage(hwnd_action, CB_GETCURSEL, (WPARAM)0, (LPARAM)0)));
+				if (action_selected != WC4_ACTIONS::End)
+					Mouse.SetAction_Button(button_selected, action_selected);
+			}
+			return TRUE;
+		case IDC_COMBO_WHEEL_UP_ACTION:
+			if (HIWORD(wParam) == CBN_SELCHANGE) {
+				HWND hwnd_action = GetDlgItem(hwndDlg, IDC_COMBO_WHEEL_UP_ACTION);
+				WC4_ACTIONS action_selected = Get_Action_Mouse((SendMessage(hwnd_action, CB_GETCURSEL, (WPARAM)0, (LPARAM)0)));
+				if (action_selected != WC4_ACTIONS::End)
+					Mouse.SetAction_Wheel_Up(action_selected);
+			}
+			return TRUE;
+		case IDC_COMBO_WHEEL_DOWN_ACTION:
+			if (HIWORD(wParam) == CBN_SELCHANGE) {
+				HWND hwnd_action = GetDlgItem(hwndDlg, IDC_COMBO_WHEEL_DOWN_ACTION);
+				WC4_ACTIONS action_selected = Get_Action_Mouse((SendMessage(hwnd_action, CB_GETCURSEL, (WPARAM)0, (LPARAM)0)));
+				if (action_selected != WC4_ACTIONS::End)
+					Mouse.SetAction_Wheel_Down(action_selected);
+			}
+			return TRUE;
+		case IDC_COMBO_WHEEL_LEFT_ACTION:
+			if (HIWORD(wParam) == CBN_SELCHANGE) {
+				HWND hwnd_action = GetDlgItem(hwndDlg, IDC_COMBO_WHEEL_LEFT_ACTION);
+				WC4_ACTIONS action_selected = Get_Action_Mouse((SendMessage(hwnd_action, CB_GETCURSEL, (WPARAM)0, (LPARAM)0)));
+				if (action_selected != WC4_ACTIONS::End)
+					Mouse.SetAction_Wheel_Left(action_selected);
+			}
+			return TRUE;
+		case IDC_COMBO_WHEEL_RIGHT_ACTION:
+			if (HIWORD(wParam) == CBN_SELCHANGE) {
+				HWND hwnd_action = GetDlgItem(hwndDlg, IDC_COMBO_WHEEL_RIGHT_ACTION);
+				WC4_ACTIONS action_selected = Get_Action_Mouse((SendMessage(hwnd_action, CB_GETCURSEL, (WPARAM)0, (LPARAM)0)));
+				if (action_selected != WC4_ACTIONS::End)
+					Mouse.SetAction_Wheel_Right(action_selected);
+			}
+			return TRUE;
+		default:
+			break;
+		}
+		break;
+	case WM_DESTROY: {
+		hWin_Config_Mouse_Control = nullptr;
+		return FALSE;
+	}
+	default:
+		return FALSE;
+		break;
+	}
+
+	return TRUE;
+}
+
+
 //____________________________________________________________________________________________________
 static INT_PTR CALLBACK DialogProc_Config_Mouse(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
@@ -1661,40 +2620,54 @@ static INT_PTR CALLBACK DialogProc_Config_Mouse(HWND hwndDlg, UINT uMsg, WPARAM 
 
 		SendMessage(hwnd_sub, CB_SETCURSEL, (WPARAM)Mouse.Deadzone_Level(), (LPARAM)0);
 
+		INITCOMMONCONTROLSEX iccex{ 0 };
+		//initialize common controls.
+		iccex.dwSize = sizeof(INITCOMMONCONTROLSEX);
+		iccex.dwICC = ICC_TAB_CLASSES;
+		InitCommonControlsEx(&iccex);
 
-		//setup button selection combo.
-		hwnd_sub = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_BUTTONS);
-		wchar_t* msg = new wchar_t[12];
-		LoadString(phinstDLL, IDS_BUTTON, general_string_buff, _countof(general_string_buff));
-		for (int i = 0; i < NUM_MOUSE_BUTTONS; i++) {
-			swprintf_s(msg, 12, L"%s %d", general_string_buff, i + 1);
-			SendMessage(hwnd_sub, CB_ADDSTRING, (WPARAM)0, (LPARAM)msg);
-		}
-		delete[] msg;
-		SendMessage(hwnd_sub, CB_SETCURSEL, (WPARAM)0, (LPARAM)0);
+		TCITEM tie{ 0 };
 
-		//fill action selection lists.
-		HWND hwnd_button_actions = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_BUTTON_ACTION);
-		HWND hwnd_wheel_up_actions = GetDlgItem(hwndDlg, IDC_COMBO_WHEEL_UP_ACTION);
-		HWND hwnd_wheel_down_actions = GetDlgItem(hwndDlg, IDC_COMBO_WHEEL_DOWN_ACTION);
-		HWND hwnd_wheel_left_actions = GetDlgItem(hwndDlg, IDC_COMBO_WHEEL_LEFT_ACTION);
-		HWND hwnd_wheel_right_actions = GetDlgItem(hwndDlg, IDC_COMBO_WHEEL_RIGHT_ACTION);
+		HWND hwndTab = GetDlgItem(hwndDlg, IDC_TAB_MOUSE_CONTROL);
+		//add a tab for each of the child dialog boxes.
+		tie.mask = TCIF_TEXT | TCIF_IMAGE;
+		tie.iImage = -1;
 
-		for (int i = 0; i < _countof(WC4_ACTION_UID); i++) {
-			//
-			LoadString(phinstDLL, WC4_ACTION_UID[i], general_string_buff, _countof(general_string_buff));
-			SendMessage(hwnd_button_actions, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
-			SendMessage(hwnd_wheel_up_actions, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
-			SendMessage(hwnd_wheel_down_actions, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
-			SendMessage(hwnd_wheel_left_actions, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
-			SendMessage(hwnd_wheel_right_actions, CB_ADDSTRING, (WPARAM)0, (LPARAM)general_string_buff);
-		}
+		LoadString(phinstDLL, IDS_TAB_GUI, general_string_buff, _countof(general_string_buff));
+		tie.pszText = general_string_buff;
+		TabCtrl_InsertItem(hwndTab, 0, &tie);
 
-		SendMessage(hwnd_button_actions, CB_SETCURSEL, (WPARAM)Mouse.GetAction_Button(0), (LPARAM)0);
-		SendMessage(hwnd_wheel_up_actions, CB_SETCURSEL, (WPARAM)Mouse.GetAction_Wheel_Up(), (LPARAM)0);
-		SendMessage(hwnd_wheel_down_actions, CB_SETCURSEL, (WPARAM)Mouse.GetAction_Wheel_Down(), (LPARAM)0);
-		SendMessage(hwnd_wheel_left_actions, CB_SETCURSEL, (WPARAM)Mouse.GetAction_Wheel_Left(), (LPARAM)0);
-		SendMessage(hwnd_wheel_right_actions, CB_SETCURSEL, (WPARAM)Mouse.GetAction_Wheel_Right(), (LPARAM)0);
+		LoadString(phinstDLL, IDS_TAB_NAV, general_string_buff, _countof(general_string_buff));
+		tie.pszText = general_string_buff;
+		TabCtrl_InsertItem(hwndTab, 1, &tie);
+
+		LoadString(phinstDLL, IDS_TAB_SPACE, general_string_buff, _countof(general_string_buff));
+		tie.pszText = general_string_buff;
+		TabCtrl_InsertItem(hwndTab, 2, &tie);
+
+		LoadString(phinstDLL, IDS_TAB_REMAP_1, general_string_buff, _countof(general_string_buff));
+		tie.pszText = general_string_buff;
+		TabCtrl_InsertItem(hwndTab, 3, &tie);
+		LoadString(phinstDLL, IDS_TAB_REMAP_2, general_string_buff, _countof(general_string_buff));
+		tie.pszText = general_string_buff;
+		TabCtrl_InsertItem(hwndTab, 4, &tie);
+		LoadString(phinstDLL, IDS_TAB_REMAP_3, general_string_buff, _countof(general_string_buff));
+		tie.pszText = general_string_buff;
+		TabCtrl_InsertItem(hwndTab, 5, &tie);
+
+		//create tab windows.
+		hWin_Config_Mouse_Control = CreateDialogParam(phinstDLL, MAKEINTRESOURCE(IDD_DIALOG_MOUSE_CONTROLS), hwndDlg, &DialogProc_Config_Mouse_Control, 0);
+
+		//set the position of tab windows, adjusting for the height of the tabs.
+		RECT rcTab;
+		GetWindowRect(hwndTab, &rcTab);
+		MapWindowPoints(HWND_DESKTOP, hwndDlg, (LPPOINT)&rcTab, 2);
+		TabCtrl_AdjustRect(hwndTab, FALSE, &rcTab);
+
+		SetWindowPos(hWin_Config_Mouse_Control, nullptr, rcTab.left, rcTab.top, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+
+		TabCtrl_SetCurFocus(hwndTab, static_cast<int>(current_pro_type));
+		ShowWindow(hWin_Config_Mouse_Control, SW_SHOW);
 
 		break;
 	}
@@ -1719,57 +2692,46 @@ static INT_PTR CALLBACK DialogProc_Config_Mouse(HWND hwndDlg, UINT uMsg, WPARAM 
 		}
 		return FALSE;
 	}
+	case WM_NOTIFY:
+		switch (((LPNMHDR)lParam)->code) {
+		case TCN_SELCHANGE: {
+			HWND hwndTab = GetDlgItem(hwndDlg, IDC_TAB_MOUSE_CONTROL);
+			int tabNum = TabCtrl_GetCurSel(hwndTab);
+			if (tabNum == 0)
+				current_pro_type = PROFILE_TYPE::GUI;
+			else if (tabNum == 1)
+				current_pro_type = PROFILE_TYPE::NAV;
+			else if (tabNum == 2)
+				current_pro_type = PROFILE_TYPE::Space;
+			else if (tabNum == 3)
+				current_pro_type = PROFILE_TYPE::ReMap_1;
+			else if (tabNum == 4)
+				current_pro_type = PROFILE_TYPE::ReMap_2;
+			else if (tabNum == 5)
+				current_pro_type = PROFILE_TYPE::ReMap_3;
+			MouseConfig_Update_Profile_Vars();
+			break;
+		}
+		default:
+			break;
+		}
+		break;
+	case WM_MOVE: {
+		HWND hwndTab = GetDlgItem(hwndDlg, IDC_TAB_MOUSE_CONTROL);
+		//move tab windows with the main window, adjusting for the height of the tabs.
+		RECT rcTab;
+		GetWindowRect(hwndTab, &rcTab);
+		MapWindowPoints(HWND_DESKTOP, hwndDlg, (LPPOINT)&rcTab, 2);
+		TabCtrl_AdjustRect(hwndTab, FALSE, &rcTab);
+		SetWindowPos(hWin_Config_Mouse_Control, nullptr, rcTab.left, rcTab.top, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+		return TRUE;
+	}
 	case WM_COMMAND:
 		switch (LOWORD(wParam)) {
 		case IDC_COMBO_DEAD_ZONE:
 			if (HIWORD(wParam) == CBN_SELCHANGE) {
 				int deadzone = (int)(SendMessage(GetDlgItem(hwndDlg, IDC_COMBO_DEAD_ZONE), CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
 				Mouse.Set_Deadzone_Level(deadzone);
-			}
-			return TRUE;
-		case IDC_COMBO_SELECT_BUTTONS:
-			if (HIWORD(wParam) == CBN_SELCHANGE) {
-				HWND hwnd_button = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_BUTTONS);
-				int button_selected = (int)(SendMessage(hwnd_button, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
-				HWND hwnd_actions = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_BUTTON_ACTION);
-				SendMessage(hwnd_actions, CB_SETCURSEL, (WPARAM)Mouse.GetAction_Button(button_selected), (LPARAM)0);
-			}
-			return TRUE;
-		case IDC_COMBO_SELECT_BUTTON_ACTION:
-			if (HIWORD(wParam) == CBN_SELCHANGE) {
-				HWND hwnd_button = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_BUTTONS);
-				int button_selected = (int)(SendMessage(hwnd_button, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
-				HWND hwnd_actions = GetDlgItem(hwndDlg, IDC_COMBO_SELECT_BUTTON_ACTION);
-				int action_selected = (int)(SendMessage(hwnd_actions, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
-				Mouse.SetAction_Button(button_selected, static_cast<WC4_ACTIONS>(action_selected));
-			}
-			return TRUE;
-		case IDC_COMBO_WHEEL_UP_ACTION:
-			if (HIWORD(wParam) == CBN_SELCHANGE) {
-				HWND hwnd_action = GetDlgItem(hwndDlg, IDC_COMBO_WHEEL_UP_ACTION);
-				int action_selected = (int)(SendMessage(hwnd_action, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
-				Mouse.SetAction_Wheel_Up(static_cast<WC4_ACTIONS>(action_selected));
-			}
-			return TRUE;
-		case IDC_COMBO_WHEEL_DOWN_ACTION:
-			if (HIWORD(wParam) == CBN_SELCHANGE) {
-				HWND hwnd_action = GetDlgItem(hwndDlg, IDC_COMBO_WHEEL_DOWN_ACTION);
-				int action_selected = (int)(SendMessage(hwnd_action, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
-				Mouse.SetAction_Wheel_Down(static_cast<WC4_ACTIONS>(action_selected));
-			}
-			return TRUE;
-		case IDC_COMBO_WHEEL_LEFT_ACTION:
-			if (HIWORD(wParam) == CBN_SELCHANGE) {
-				HWND hwnd_action = GetDlgItem(hwndDlg, IDC_COMBO_WHEEL_LEFT_ACTION);
-				int action_selected = (int)(SendMessage(hwnd_action, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
-				Mouse.SetAction_Wheel_Left(static_cast<WC4_ACTIONS>(action_selected));
-			}
-			return TRUE;
-		case IDC_COMBO_WHEEL_RIGHT_ACTION:
-			if (HIWORD(wParam) == CBN_SELCHANGE) {
-				HWND hwnd_action = GetDlgItem(hwndDlg, IDC_COMBO_WHEEL_RIGHT_ACTION);
-				int action_selected = (int)(SendMessage(hwnd_action, CB_GETCURSEL, (WPARAM)0, (LPARAM)0));
-				Mouse.SetAction_Wheel_Right(static_cast<WC4_ACTIONS>(action_selected));
 			}
 			return TRUE;
 		default:
@@ -1863,8 +2825,10 @@ static INT_PTR CALLBACK DialogProc_Config_Mouse(HWND hwndDlg, UINT uMsg, WPARAM 
 
 //______________________________________________________________________________________________________
 static INT_PTR CALLBACK DialogProc_Config_Control(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	
 	static HWND hwndParent = nullptr;
 	static bool was_Deactivated = false;
+	static HWND hWin_Config_Joy_Active = nullptr;
 
 	switch (uMsg) {
 	case WM_INITDIALOG: {
@@ -1909,7 +2873,14 @@ static INT_PTR CALLBACK DialogProc_Config_Control(HWND hwndDlg, UINT uMsg, WPARA
 		EnableWindow(hwndParent, FALSE);
 
 		//create tab windows.
-		hWin_Config_Joy = CreateDialogParam(phinstDLL, MAKEINTRESOURCE(IDD_DIALOG_CONFIG_JOY), hwndDlg, &DialogProc_JoyConfig, 0);
+		if (controller_enhancements_enabled) {
+			hWin_Config_Joy = CreateDialogParam(phinstDLL, MAKEINTRESOURCE(IDD_DIALOG_CONFIG_JOY), hwndDlg, &DialogProc_JoyConfig, 0);
+			hWin_Config_Joy_Active = hWin_Config_Joy;
+		}
+		else {
+			hWin_Config_Joy_Off = CreateDialogParam(phinstDLL, MAKEINTRESOURCE(IDD_DIALOG_CONFIG_JOY_OFF), hwndDlg, &DialogProc_JoyConfig_Off, 0);
+			hWin_Config_Joy_Active = hWin_Config_Joy_Off;
+		}
 		hWin_Config_Mouse = CreateDialogParam(phinstDLL, MAKEINTRESOURCE(IDD_DIALOG_CONFIG_MOUSE), hwndDlg, &DialogProc_Config_Mouse, 0);
 
 		//set the position of tab windows, adjusting for the height of the tabs.
@@ -1917,18 +2888,19 @@ static INT_PTR CALLBACK DialogProc_Config_Control(HWND hwndDlg, UINT uMsg, WPARA
 		GetClientRect(hwndDlg, &rcTab);
 		TabCtrl_AdjustRect(hwndTab, FALSE, &rcTab);
 
-		SetWindowPos(hWin_Config_Joy, nullptr, rcTab.left, rcTab.top, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+
+		SetWindowPos(hWin_Config_Joy_Active, nullptr, rcTab.left, rcTab.top, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 		SetWindowPos(hWin_Config_Mouse, nullptr, rcTab.left, rcTab.top, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 
 		//set initial focus tab.
-		if (*p_wc4_controller_mouse == 1) {
+		if (!controller_enhancements_enabled || *p_wc4_controller_mouse == 1) {
 			TabCtrl_SetCurFocus(hwndTab, 1);
-			ShowWindow(hWin_Config_Joy, SW_HIDE);
+			ShowWindow(hWin_Config_Joy_Active, SW_HIDE);
 			ShowWindow(hWin_Config_Mouse, SW_SHOW);
 		}
 		else {
 			TabCtrl_SetCurFocus(hwndTab, 0);
-			ShowWindow(hWin_Config_Joy, SW_SHOW);
+			ShowWindow(hWin_Config_Joy_Active, SW_SHOW);
 			ShowWindow(hWin_Config_Mouse, SW_HIDE);
 		}
 		break;
@@ -1938,12 +2910,13 @@ static INT_PTR CALLBACK DialogProc_Config_Control(HWND hwndDlg, UINT uMsg, WPARA
 		case TCN_SELCHANGE: {
 			HWND hwndTab = GetDlgItem(hwndDlg, IDC_TAB1);
 			int tabNum = TabCtrl_GetCurSel(hwndTab);
+
 			if (tabNum == 1) {
-				ShowWindow(hWin_Config_Joy, SW_HIDE);
+				ShowWindow(hWin_Config_Joy_Active, SW_HIDE);
 				ShowWindow(hWin_Config_Mouse, SW_SHOW);
 			}
 			else if (tabNum == 0) {
-				ShowWindow(hWin_Config_Joy, SW_SHOW);
+				ShowWindow(hWin_Config_Joy_Active, SW_SHOW);
 				ShowWindow(hWin_Config_Mouse, SW_HIDE);
 			}
 			break;
@@ -1959,7 +2932,7 @@ static INT_PTR CALLBACK DialogProc_Config_Control(HWND hwndDlg, UINT uMsg, WPARA
 		GetClientRect(hwndDlg, &rcTab);
 		TabCtrl_AdjustRect(hwndTab, FALSE, &rcTab);
 
-		SetWindowPos(hWin_Config_Joy, nullptr, rcTab.left, rcTab.top, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+		SetWindowPos(hWin_Config_Joy_Active, nullptr, rcTab.left, rcTab.top, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 		SetWindowPos(hWin_Config_Mouse, nullptr, rcTab.left, rcTab.top, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 
 		return TRUE;
@@ -1967,14 +2940,16 @@ static INT_PTR CALLBACK DialogProc_Config_Control(HWND hwndDlg, UINT uMsg, WPARA
 	case WM_COMMAND:
 		switch (LOWORD(wParam)) {
 		case IDOK: {
-			Joysticks.Save();
+			if (controller_enhancements_enabled)
+				Joysticks.Save();
 			Mouse.Save();
 			EnableWindow(hwndParent, TRUE);
 			DestroyWindow(hwndDlg);
 			return FALSE;
 		}
 		case IDCANCEL: {
-			Joysticks.Load();
+			if (controller_enhancements_enabled)
+				Joysticks.Load();
 			Mouse.Load();
 			EnableWindow(hwndParent, TRUE);
 			DestroyWindow(hwndDlg);
@@ -1985,13 +2960,15 @@ static INT_PTR CALLBACK DialogProc_Config_Control(HWND hwndDlg, UINT uMsg, WPARA
 		}
 		break;
 	case WM_CLOSE:
-		Joysticks.Load();
+		if (controller_enhancements_enabled)
+			Joysticks.Load();
 		Mouse.Load();
 		EnableWindow(hwndParent, TRUE);
 		DestroyWindow(hwndDlg);
 		return FALSE;
 	case WM_DESTROY: {
 		hWin_Config_Control = nullptr;
+		hWin_Config_Joy_Active = nullptr;
 		if (was_Deactivated)
 			Set_WindowActive_State(TRUE);
 		return FALSE;
@@ -2036,7 +3013,10 @@ BOOL JoyConfig_Main() {
 	if (!JoyConfig_Create(*p_wc4_hWinMain, phinstDLL))
 		return FALSE;
 
+	PROFILE_TYPE saved_pro_type = current_pro_type;
+
 	ShowCursor(TRUE);
+
 	while (hWin_Config_Control != nullptr) {
 		Sleep(16);
 		MSG message;
@@ -2050,7 +3030,6 @@ BOOL JoyConfig_Main() {
 		if (hWin_Config_Joy)
 			JoyConfig_Refresh(hWin_Config_Joy);
 	}
-
 
 	current_num_axes = 0;
 	if (current_axisArray)
@@ -2067,7 +3046,11 @@ BOOL JoyConfig_Main() {
 		delete[] current_switchArray;
 	current_switchArray = nullptr;
 
-
 	ShowCursor(FALSE);
+
+	current_pro_type = saved_pro_type;
+	//clear keyboard state
+	Clear_Key_States();
+
 	return TRUE;
 }

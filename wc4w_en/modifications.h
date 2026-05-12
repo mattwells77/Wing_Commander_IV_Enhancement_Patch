@@ -24,12 +24,20 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 void Modifications_GeneralFixes();
 void Modifications_Display();
+
 void Modifications_Joystick();
+void Modifications_Mouse();
+void Modifications_Keyboard();
+void Modifications_Controller_Enhancements();
+
 void Modifications_ObjectRotation();
 void Modifications_Music();
+void Modifications_Movies();
 
 void Set_WindowActive_State(BOOL isActive);
 
 #ifndef VERSION_WC4_DVD
 void Music_Class_Destructor();
 #endif
+
+void Palette_Update_Main(BYTE* p_pal_buff, BYTE offset, DWORD num_entries);
