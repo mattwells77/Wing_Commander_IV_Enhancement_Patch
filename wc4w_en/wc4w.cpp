@@ -231,7 +231,7 @@ void(*wc4_draw_choice_text_buff)(void* ptr, BYTE* buff, DWORD flags) = nullptr;
 void(*wc4_draw_movie_frame)() = nullptr;
 
 
-void(*wc4_draw_text_to_buff)(DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, BYTE* p_pal_offsets) = nullptr;
+void(*wc4_draw_text_to_buff)(DRAW_BUFFER_MAIN* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, BYTE* p_pal_offsets) = nullptr;
 
 void(*wc4_process_key)(BYTE scan_code, BYTE is_ext_key, BYTE state) = nullptr;
 
@@ -439,7 +439,7 @@ void WC4W_Setup() {
 
     wc4_draw_movie_frame = (void(*)())0x47B600;
 
-    wc4_draw_text_to_buff = (void(*)(DRAW_BUFFER*, DWORD, DWORD, DWORD, char*, BYTE*)) 0x4913A9;
+    wc4_draw_text_to_buff = (void(*)(DRAW_BUFFER_MAIN*, DWORD, DWORD, DWORD, char*, BYTE*)) 0x4913A9;
 
     p_wc4_movie_no_interlace = (DWORD*)0x4C43F0;
 
@@ -666,7 +666,7 @@ void WC4W_Setup() {
 
     wc4_draw_movie_frame = (void(*)())0x4830D0;
 
-    wc4_draw_text_to_buff = ( void(*)(DRAW_BUFFER*, DWORD, DWORD, DWORD, char*, BYTE*)) 0x48CCE1;
+    wc4_draw_text_to_buff = ( void(*)(DRAW_BUFFER_MAIN*, DWORD, DWORD, DWORD, char*, BYTE*)) 0x48CCE1;
 
     p_wc4_movie_no_interlace = (DWORD*)0x4D3044;
 

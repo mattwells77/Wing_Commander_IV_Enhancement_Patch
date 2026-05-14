@@ -434,7 +434,7 @@ extern void(*wc4_deallocate_mem_main)(void*);
 extern BOOL(**p_wc4_xanlib_drawframeXD)(VIDframe* vidFrame, BYTE* tBuff, UINT tWidth, DWORD flag);
 extern BOOL(__thiscall** p_wc4_xanlib_play)(void*, LONG num);
 
-extern void(*wc4_draw_text_to_buff)(DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1 ,char* text_buff, BYTE* p_pal_offsets);
+extern void(*wc4_draw_text_to_buff)(DRAW_BUFFER_MAIN* p_toBuff, DWORD x, DWORD y, DWORD unk1 ,char* text_buff, BYTE* p_pal_offsets);
 
 extern void(*wc4_process_key)(BYTE scan_code, BYTE is_ext_key, BYTE state);
 

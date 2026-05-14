@@ -139,8 +139,8 @@ static BYTE* VDU_Comms_Get_Pal_Highlight_Offsets(BYTE hud_colour_type, BYTE* p_p
 }
 
 
-//___________________________________________________________________________________________________________________________________________________________
-static void VDU_Comms_Draw_Menu_Text(BYTE hud_type, LONG line_num, DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, BYTE* p_pal_offsets) {
+//________________________________________________________________________________________________________________________________________________________________
+static void VDU_Comms_Draw_Menu_Text(BYTE hud_type, LONG line_num, DRAW_BUFFER_MAIN* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, BYTE* p_pal_offsets) {
 
     //highlight menu text if line is selected.
     if (line_num - 1 == vdu_comms_selected_line)

@@ -63,7 +63,7 @@ void Check_Mouse_Double_Click() {
 				else {
 					mouse_double_click_left = true;
 					*p_wc4_movie_halt_flag = true;
-					Debug_Info("MOUSE DOUBLE CLICK");
+					//Debug_Info("MOUSE DOUBLE CLICK");
 				}
 			}
 			else

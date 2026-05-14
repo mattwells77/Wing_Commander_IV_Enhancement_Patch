@@ -34,43 +34,6 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 LibVlc_Movie* pMovie_vlc = nullptr;
 
 
-//_______________________________________________________________
-static void DXBlt_Movie(BYTE* fBuff, DWORD subY, DWORD subHeight) {
-
-    if (surface_gui == nullptr)
-        return;
-
-    LONG fWidth = GUI_WIDTH;
-
-    if (fBuff == NULL || fBuff == (BYTE*)*pp_wc4_DIB_vBits) {
-        fBuff = (BYTE*)*pp_wc4_DIB_vBits;
-        fWidth = (*pp_wc4_DIB_Bitmapinfo)->bmiHeader.biWidth;
-        //Debug_Info("DXBlt - db w=%d, h =%d", fWidth, -(*pp_wc4_DIB_Bitmapinfo)->bmiHeader.biHeight);
-    }
-    //else
-        //Debug_Info("DXBlt - buffer provided");
-
-    BYTE* pSurface = nullptr;
-
-    if (surface_gui->Lock((VOID**)&pSurface, p_wc4_main_surface_pitch) != S_OK)
-        return;
-
-    fBuff += subY * fWidth;
-    pSurface += subY * *p_wc4_main_surface_pitch;
-    for (UINT y = 0; y < subHeight; y++) {
-        for (LONG x = 0; x < fWidth; x++)
-            pSurface[x] = fBuff[x];
-
-        pSurface += *p_wc4_main_surface_pitch;
-        fBuff += fWidth;
-    }
-
-    surface_gui->Unlock();
-
-    Display_Dx_Present(PRESENT_TYPE::movie);
-}
-
-
 //_____________________________________________________________________________________
 static BOOL DrawVideoFrame(VIDframe* vidFrame, RGBQUAD* tBuff, UINT tWidth, DWORD flag) {
 
@@ -721,6 +684,96 @@ static void __declspec(naked) inflight_movie_audio_check(void) {
 }
 
 
+//_________________________________________________________________________________
+static void Movie_Clear_Choice_Background(BYTE* fBuff, DWORD subY, DWORD subHeight) {
+    surface_gui->Clear_Texture(0x00);
+}
+
+
+//______________________________________________________________________________________________________________________________
+static void Movie_Draw_Choice_Text(DRAW_BUFFER_MAIN* p_toBuff, LONG x, LONG y, DWORD unk1, char* text_buff, BYTE* p_pal_offsets) {
+
+    if (surface_gui == nullptr)
+        return;
+
+    bool is_top = false;
+    if (y < 240)
+        is_top = true;
+
+    LONG movie_height = 0;
+    if (pMovie_vlc) {
+        DrawSurface* surface = pMovie_vlc->Get_Currently_Playing_Surface();
+        movie_height = (LONG)surface->GetScaledHeight();
+    }
+    else if (surface_movieXAN)
+        movie_height = (LONG)surface_movieXAN->GetScaledHeight();
+
+    LONG text_y = 0;
+    LONG text_height = 16;
+    LONG black_bar_height = (LONG)((480.0f / clientHeight) * ((clientHeight - movie_height) / 2));
+
+    if (black_bar_height >= text_height) {
+        text_y = (clientHeight - movie_height) / 4;
+        text_y = (480 * text_y) / clientHeight;
+
+        if (is_top)//draw text in the black area above the movie if there is room.
+            text_y -= text_height / 2;
+        else//draw text in the black area under the movie if there is room.
+            text_y = 480 - text_y - text_height / 2;
+    }
+    else {
+        if (is_top)//otherwise draw text over the movie at the top rather than overlapping the black bar.
+            text_y = black_bar_height;
+        else//otherwise draw text over the movie at the bottom rather than overlapping the black bar.
+            text_y = 480 - black_bar_height - text_height;
+    }
+
+    if (text_y < 0)
+        text_y = 0;
+    else if (text_y > 480 - text_height)
+        text_y = 480 - text_height;
+
+    BYTE* pSurface_bak = p_toBuff->db->buff;
+
+    BYTE* pSurface = nullptr;
+
+    if (surface_gui->Lock((VOID**)&pSurface, p_wc4_main_surface_pitch) != S_OK)
+        return;
+
+    p_toBuff->db->buff = pSurface;
+    wc4_draw_text_to_buff(p_toBuff, x, text_y, unk1, text_buff, p_pal_offsets);
+    surface_gui->Unlock();
+
+    p_toBuff->db->buff = pSurface_bak;
+    Display_Dx_Present(PRESENT_TYPE::movie);
+}
+
+
+//____________________________________________________________________________________________________________________________________
+static void Movie_Draw_Choice_Text_Top(DRAW_BUFFER_MAIN* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, BYTE* p_pal_offsets) {
+
+    if (surface_gui)//to clear choise text if resizing during conversation. 
+        surface_gui->Clear_Texture(0x0);
+    Movie_Draw_Choice_Text(p_toBuff, x, y, unk1, text_buff, p_pal_offsets);
+}
+
+
+//_______________________________________________________________________________________________________________________________________
+static void Movie_Draw_Choice_Text_Bottom(DRAW_BUFFER_MAIN* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, BYTE* p_pal_offsets) {
+
+    Movie_Draw_Choice_Text(p_toBuff, x, y, unk1, text_buff, p_pal_offsets);
+    Display_Dx_Present(PRESENT_TYPE::movie);
+}
+
+
+//__________________________________________________________________________________________________________________________________________
+static void Movie_Draw_Choice_Text_Highlight(DRAW_BUFFER_MAIN* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, BYTE* p_pal_offsets) {
+
+    Movie_Draw_Choice_Text(p_toBuff, x, y, unk1, text_buff, p_pal_offsets);
+    Display_Dx_Present(PRESENT_TYPE::movie);
+}
+
+
 #ifdef VERSION_WC4_DVD
 //_________________________
 void Modifications_Movies() {
@@ -747,16 +800,22 @@ void Modifications_Movies() {
     FuncReplace32(0x47C99F, 0xFFFF9B4D, (DWORD)&UnlockShowMovieSurface);
     FuncReplace32(0x47CAAA, 0xFFFF9A42, (DWORD)&UnlockShowMovieSurface);
 
-    //replace blit function for movies
-    FuncReplace32(0x4591BB, 0x01E5B1, (DWORD)&DXBlt_Movie);
-    FuncReplace32(0x4591D3, 0x01E599, (DWORD)&DXBlt_Movie);
-    FuncReplace32(0x45950D, 0x01E25F, (DWORD)&DXBlt_Movie);
-    FuncReplace32(0x459525, 0x01E247, (DWORD)&DXBlt_Movie);
+    //clear conversation choice text buffers
+    MemWrite8(0x4591BA, 0xE8, 0x90);
+    MemWrite32(0x4591BB, 0x01E5B1, 0x90909090);
+    FuncReplace32(0x4591D3, 0x01E599, (DWORD)&Movie_Clear_Choice_Background);
+    MemWrite8(0x45950C, 0xE8, 0x90);
+    MemWrite32(0x45950D, 0x01E25F, 0x90909090);
+    FuncReplace32(0x459525, 0x01E247, (DWORD)&Movie_Clear_Choice_Background);
 
-    //replace blit function for draw choice text
-    FuncReplace32(0x459A62, 0x01DD0A, (DWORD)&DXBlt_Movie);
-    FuncReplace32(0x459A79, 0x01DCF3, (DWORD)&DXBlt_Movie);
+    //draw conversation text
+    FuncReplace32(0x4598D6, 0x037ACF, (DWORD)&Movie_Draw_Choice_Text_Top);
+    FuncReplace32(0x459915, 0x037A90, (DWORD)&Movie_Draw_Choice_Text_Bottom);
+    FuncReplace32(0x459A3D, 0x037968, (DWORD)&Movie_Draw_Choice_Text_Highlight);
 
+    //jump redundant blits after drawing choice text.
+    MemWrite16(0x459A50, 0xF883, 0x61EB);//JMP SHORT 00459AB3
+    MemWrite8(0x459A52, 0x02, 0x90);
 
     // HD Movies-----------------------------------------------
     //skip is_vob_playback check
@@ -826,16 +885,21 @@ void Modifications_Movies() {
     FuncReplace32(0x484DDE, 0xFFF8B00E, (DWORD)&UnlockShowMovieSurface);
     FuncReplace32(0x484EEA, 0xFFF8AF02, (DWORD)&UnlockShowMovieSurface);
 
-    //replace blit function for movies
-    FuncReplace32(0x46C5E0, 0xFFFA495C, (DWORD)&DXBlt_Movie);
-    FuncReplace32(0x46C5F8, 0xFFFA4944, (DWORD)&DXBlt_Movie);
-    FuncReplace32(0x46C916, 0xFFFA4626, (DWORD)&DXBlt_Movie);
-    FuncReplace32(0x46C92E, 0xFFFA460E, (DWORD)&DXBlt_Movie);
+    //clear conversation choice text buffers
+    MemWrite8(0x46C5DF, 0xE8, 0x90);
+    MemWrite32(0x46C5E0, 0xFFFA495C, 0x90909090);
+    FuncReplace32(0x46C5F8, 0xFFFA4944, (DWORD)&Movie_Clear_Choice_Background);
+    MemWrite8(0x46C915, 0xE8, 0x90);
+    MemWrite32(0x46C916, 0xFFFA4626, 0x90909090);
+    FuncReplace32(0x46C92E, 0xFFFA460E, (DWORD)&Movie_Clear_Choice_Background);
 
-    //replace blit function for draw choice text
-    FuncReplace32(0x46CC0C, 0xFFFA4330, (DWORD)&DXBlt_Movie);
-    FuncReplace32(0x46CC24, 0xFFFA4318, (DWORD)&DXBlt_Movie);
+    //draw conversation text
+    FuncReplace32(0x46CA75, 0x020268, (DWORD)&Movie_Draw_Choice_Text_Top);
+    FuncReplace32(0x46CAB5, 0x020228, (DWORD)&Movie_Draw_Choice_Text_Bottom);
+    FuncReplace32(0x46CBE3, 0x0200FA, (DWORD)&Movie_Draw_Choice_Text_Highlight);
 
+    //jump redundant blits after drawing choice text.
+    MemWrite16(0x46CBFA, 0x4B6A, 0x57EB);//JMP SHORT 0046CC53
 
     // HD Movies-----------------------------------------------
     //Replaces the Play_Movie function similar to the dvd version of WC4.

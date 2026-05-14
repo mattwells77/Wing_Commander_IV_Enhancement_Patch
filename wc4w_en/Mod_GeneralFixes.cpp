@@ -504,8 +504,8 @@ static void __declspec(naked) get_wave_audio_data(void) {
 }
 
 
-//_________________________________________________________________________________________________________________________
-static void Display_Debug_Info_1(DRAW_BUFFER* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, BYTE* p_pal_offsets) {
+//______________________________________________________________________________________________________________________________
+static void Display_Debug_Info_1(DRAW_BUFFER_MAIN* p_toBuff, DWORD x, DWORD y, DWORD unk1, char* text_buff, BYTE* p_pal_offsets) {
     
     y = (*pp_wc4_db_game_main)->rc.top + 4;
     wc4_draw_text_to_buff(p_toBuff, x, y, unk1, text_buff, p_pal_offsets);
