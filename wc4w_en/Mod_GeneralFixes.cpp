@@ -621,7 +621,7 @@ static void __declspec(naked) num_watchers_overide(void) {
     }
 }
 
-
+/*
 //_____________________________________________
 static void Proccess_Object(DWORD** func_array) {
     static int count = 0;
@@ -664,7 +664,7 @@ static void __declspec(naked) processes_object(void) {
 
     }
 }
-
+*/
 
 #ifdef VERSION_WC4_DVD
 //_______________________________
