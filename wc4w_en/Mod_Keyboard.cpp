@@ -297,9 +297,8 @@ void Modifications_Keyboard() {
     MemWrite8(0x488F90, 0x2A, 0x57);//push edi
 
 	//wait for yes no input in Alt+X message loop.
-	MemWrite8(0x489240, 0x6A, 0xE9);
-	FuncWrite32(0x489241, 0xE8006A01, (DWORD)&gui_alt_x_message_loop);
-	MemWrite32(0x489245, 0x17, 0x90909090);
+    FuncReplace32(0x457DD8, 0x031464, (DWORD)&gui_alt_x_message_loop);
+    FuncReplace32(0x457DE1, 0x03145B, (DWORD)&gui_alt_x_message_loop);
 
 	//print scancodes
 	//MemWrite16(0x4ADD0E, 0x918A, 0xE890);
@@ -327,9 +326,8 @@ void Modifications_Keyboard() {
     FuncWrite32(0x4ADCFC, 0x2AFB807F, (DWORD)&proccess_key_state);
 	
 	//wait for yes no input in Alt+X message loop.
-	MemWrite8(0x4AE1A0, 0x6A, 0xE9);
-	FuncWrite32(0x4AE1A1, 0xE8006A01, (DWORD)&gui_alt_x_message_loop);
-	MemWrite32(0x4AE1A5, 0x17, 0x90909090);
+    FuncReplace32(0x46B1F4, 0x042FA8, (DWORD)&gui_alt_x_message_loop);
+    FuncReplace32(0x46B1FD, 0x042F9F, (DWORD)&gui_alt_x_message_loop);
 
 	//print scancodes
 	//MemWrite16(0x4ADD0E, 0x918A, 0xE890);
