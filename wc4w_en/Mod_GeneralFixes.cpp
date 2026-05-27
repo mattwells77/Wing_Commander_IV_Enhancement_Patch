@@ -217,6 +217,29 @@ static BOOL __stdcall DeleteFile_UAC(LPCSTR lpFileName) {
 void* p_delete_file_uac = &DeleteFile_UAC;
 
 
+//_________________________________________________________________________________________________________
+static HANDLE __stdcall FindFirstFile_Saved_Games_UAC(LPCSTR lpFileName, LPWIN32_FIND_DATAA lpFindFileData) {
+    // checks if saved games are present and if so, skips into movie/mission.
+    std::wstring path = GetAppDataPath();
+    if (!path.empty()) {
+        path.append(L"\\");
+        HANDLE handle = INVALID_HANDLE_VALUE;
+        size_t num_bytes = 0;
+        wchar_t* wchar_buff = new wchar_t[13] {0};
+        if (mbstowcs_s(&num_bytes, wchar_buff, 13, lpFileName, 13) == 0) {
+            path.append(wchar_buff);
+            WIN32_FIND_DATA FindFileData;
+            handle = FindFirstFile(path.c_str(), &FindFileData);
+        }
+        delete[] wchar_buff;
+        if (handle != INVALID_HANDLE_VALUE)
+            return handle;
+    }
+    return FindFirstFileA(lpFileName, lpFindFileData);
+}
+void* p_find_first_file_saved_games_uac = &FindFirstFile_Saved_Games_UAC;
+
+
 //________________________________
 //Rebuilds the save game name list file if it does not exist. Adding detected saved games from UAC appdata and the Application folder.
 static BOOL Build_SaveNames_File() {
@@ -686,6 +709,10 @@ void Modifications_GeneralFixes() {
  
     MemWrite16(0x4529D0, 0xEC81, 0xE990);
     FuncWrite32(0x4529D2, 0x0400, (DWORD)&build_save_names_file);
+
+
+    //00470794 | .FF15 B0444D00 CALL DWORD PTR DS : [<&KERNEL32.FindFirstFileA>]
+    MemWrite32(0x470796, 0x4D44B0, (DWORD)&p_find_first_file_saved_games_uac);
     //------------------------------------------------------------
 
 
@@ -767,6 +794,10 @@ void Modifications_GeneralFixes() {
 
     MemWrite16(0x47A780, 0xEC81, 0xE990);
     FuncWrite32(0x47A782, 0x0400, (DWORD)&build_save_names_file);
+
+
+    //00401EE9 | .FF15 88E34D00 CALL DWORD PTR DS : [<&KERNEL32.FindFirstFileA>]
+    MemWrite32(0x401EEB, 0x4DE388, (DWORD)&p_find_first_file_saved_games_uac);
     //------------------------------------------------------------
 
 
