@@ -33,6 +33,11 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 static DWORD Music_Player(MUSIC_CLASS* music_class) {
     //This function runs in a seperate thread.
 
+    static bool deleting_music_player = false;
+
+    while (deleting_music_player)
+        Sleep(0);
+
     if (p_Music_Player)
         delete p_Music_Player;
 
@@ -58,9 +63,12 @@ static DWORD Music_Player(MUSIC_CLASS* music_class) {
 
     music_class->header.flags &= 0xFFFFFFFE;
 
-    if (p_Music_Player)
+    if (p_Music_Player) {
+        deleting_music_player = true;
         delete p_Music_Player;
-    p_Music_Player = nullptr;
+        p_Music_Player = nullptr;
+        deleting_music_player = false;
+    }
 
     Debug_Info_Music("Music_Player DONE");
     return 0;
@@ -171,7 +179,7 @@ void Modifications_Music() {
     MemWrite32(0x4B6450, 0x3C, 63);
     //music volume lowered for comms, original -30.
     //adjusted for vlc for a similar effect to -20.
-    MemWrite8(0x44F0EA, 0xE2, -MUSIC_VOLUME_VLC_TALK_SUB);
+    //MemWrite8(0x44F0EA, 0xE2, -MUSIC_VOLUME_VLC_TALK_SUB);
 }
 
 #else
@@ -195,6 +203,6 @@ void Modifications_Music() {
     MemWrite32(0x4D9638, 0x3C, 63);
     //music volume lowered for comms, original -30.
     //adjusted for vlc for a similar effect to -20.
-    MemWrite8(0x441B68, 0x1E, MUSIC_VOLUME_VLC_TALK_SUB);
+    //MemWrite8(0x441B68, 0x1E, MUSIC_VOLUME_VLC_TALK_SUB);
 }
 #endif

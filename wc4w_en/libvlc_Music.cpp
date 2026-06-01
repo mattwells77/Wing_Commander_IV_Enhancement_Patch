@@ -85,6 +85,15 @@ static LONG Calulate_Volume(LONG vol, LONG max_vol) {
         volume = 0;
     else if (volume > 100)
         volume = 100;
+
+
+    //fix volume to better match that of the original.
+    double fvol_mod = volume * 0.01f;
+    fvol_mod = sin(fvol_mod * 1.57079632679489661923f);// PI/2
+    volume = (LONG)(fvol_mod * 100);
+
+    Debug_Info_Music("Calulate_Volume volume: %d %f", volume, fvol_mod);
+
     return volume;
 }
 
@@ -145,7 +154,7 @@ static int media_seek_cb(void* opaque, uint64_t offset) {
     TUNE_DATA* tune_data = static_cast<TUNE_DATA*>(opaque);
     if (!tune_data)
         return 0;
-    if (offset < (uint64_t)tune_data->pos)
+    if (offset < (uint64_t)tune_data->len)
         tune_data->pos = (size_t)offset;
     else
         tune_data->pos = 0;
@@ -183,45 +192,58 @@ LibVlc_Music::LibVlc_Music(MUSIC_CLASS* p_in_music_class) {
     paused = false;
     position = 0;
     is_playing = false;
+    last_volume = -1;
 };
+
+
+//________________________________
+bool LibVlc_Music::Update_Volume() {
+
+    if (is_playing && *p_wc4_music_volume_current != last_volume) {
+        if (current_tune < NUM_TUNES) {
+            last_volume = *p_wc4_music_volume_current;
+            Debug_Info_Music("LibVlc_Music: Update_Tune volume: %d", last_volume);
+            return mediaPlayer.setVolume(Calulate_Volume(last_volume, tune[current_tune]->max_volume));
+        }
+    }
+    return false;
+}
 
 
 //______________________________
 bool LibVlc_Music::Update_Tune() {
     
-    static LONG last_volume = 0;
+    if (paused)
+        return true;
 
-    if (*p_wc4_music_volume_current != last_volume) {
-        if (current_tune < NUM_TUNES) {
-            Debug_Info_Music("LibVlc_Music: Update_Tune volume: %d", *p_wc4_music_volume_current);
-            mediaPlayer.setVolume(Calulate_Volume(*p_wc4_music_volume_current, tune[current_tune]->max_volume));
-            last_volume = *p_wc4_music_volume_current;
-        }
-    }
+    Update_Volume();
 
-    p_music_class->header.current_tune = p_music_class->header.requested_tune;
-    if (current_tune == p_music_class->header.current_tune)
-        return 1;
+    if (is_playing && current_tune == p_music_class->header.requested_tune)
+        return is_playing;
 
-    Debug_Info_Music("LibVlc_Music: Update_Tune current:%d", p_music_class->header.current_tune);
-    if (p_music_class->header.current_tune >= NUM_TUNES) {
+    if (p_music_class->header.requested_tune >= NUM_TUNES) {
         mediaPlayer.stop();
         Debug_Info_Music("LibVlc_Music: Update_Tune - stop current:%d", current_tune);
         return false;
     }
 
-    // if current tune is valid and set to be uninterupted than continue playing until done.
+    if (tune[p_music_class->header.requested_tune] == nullptr) {
+        Debug_Info_Music("LibVlc_Music: Update_Tune -  tune NOT loaded: %d", p_music_class->header.requested_tune);
+        p_music_class->header.requested_tune = -1;
+        return is_playing;
+    }
+
+    // if current tune is valid and set to be uninterrupted than continue playing until done.
     if (current_tune < NUM_TUNES) {
         MUSIC_FILE* music_file = &p_music_class->file[current_tune];
-
-        if (is_playing && music_file->dont_interrupt_tune)
+        if (is_playing && music_file->dont_interrupt_tune) 
             return is_playing;
     }
 
     // set and play next tune.
+    p_music_class->header.current_tune = p_music_class->header.requested_tune;
     current_tune = p_music_class->header.current_tune;
     MUSIC_FILE* music_file = &p_music_class->file[current_tune];
-
 
     std::string alt_tune = Get_Alt_Tune_Path(tune[current_tune]->name);
 
@@ -239,10 +261,10 @@ bool LibVlc_Music::Update_Tune() {
         Debug_Info_Error("LibVlc_Music: Update_Tune, Media creation FAILED");
     libvlc_media_player_set_media(mediaPlayer, m_vlcMedia);
 
-    Debug_Info_Music("LibVlc_Music: Update_Tune volume New media: %d", *p_wc4_music_volume_current);
-    mediaPlayer.setVolume(Calulate_Volume(*p_wc4_music_volume_current, tune[current_tune]->max_volume));
-
-    return  mediaPlayer.play();
+    mediaPlayer.play();
+    Update_Volume();
+    Debug_Info_Music("LibVlc_Music: Update_Tune - Play tune: %d", current_tune);
+    return  is_playing;
 }
 
 

@@ -30,9 +30,9 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //the original max game volume.
 #define MUSIC_VOLUME_ORI_MAX        63
 //adjusted max volume of the original tunes when played with vlc.
-#define MUSIC_VOLUME_VLC_MAX        75
+#define MUSIC_VOLUME_VLC_MAX        50
 //adjusted volume subtraction for comms when played with vlc.
-#define MUSIC_VOLUME_VLC_TALK_SUB   20
+//#define MUSIC_VOLUME_VLC_TALK_SUB   20
 
 class TUNE_DATA {
 public:
@@ -84,10 +84,11 @@ public:
                 delete tune[i];
             tune[i] = nullptr;
         }
-        Debug_Info_Music("~LibVlc_Music: DONE");
+        //Debug_Info_Music("~LibVlc_Music: DONE");
     };
 
     bool Update_Tune();
+    bool Update_Volume();
     void Pause(bool pause) {
         if (is_playing) {
             paused = pause;
@@ -97,8 +98,6 @@ public:
                 position = mediaPlayer.position();
 #if LIBVLC_VERSION_INT >= LIBVLC_VERSION(4, 0, 0, 0)
                 mediaPlayer.stopAsync();
-                while (is_vlc_playing)//ensure vlc is done with surface. 
-                    Sleep(0);
 #else
                 mediaPlayer.stop();
 #endif
@@ -143,6 +142,7 @@ private:
     bool paused;
     float position;
     bool is_playing;
+    LONG last_volume;
 #if LIBVLC_VERSION_INT >= LIBVLC_VERSION(4, 0, 0, 0)
     bool is_stop_set;//when stopping after being deliberatly stopped rather than reaching the end of the movie. 
 #endif
@@ -151,6 +151,7 @@ private:
     void on_play() {
         Debug_Info_Music("LibVlc_Music: on_play Play started");
         is_playing = true;
+        last_volume = -1;
     };
     void on_stopped() {
         if (!paused) {
@@ -158,6 +159,7 @@ private:
             p_music_class->header.current_tune = -1;
             p_music_class->header.requested_tune = -1;
             current_tune = -1;
+            last_volume = -1;
             is_playing = false;
         }
     };
