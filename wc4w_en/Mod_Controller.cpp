@@ -144,6 +144,46 @@ static void __declspec(naked) joy_setup(void) {
 }
 
 
+//______________________________________________
+static void Joystick_Setup_Alt_O_Menu(LONG flag) {
+
+	PROFILE_TYPE saved_pro_type = current_pro_type;
+	current_pro_type = PROFILE_TYPE::Space;
+
+	Joystick_Setup(flag);
+
+	current_pro_type = saved_pro_type;
+}
+
+
+//______________________________________________________
+static void __declspec(naked) joy_setup_alt_o_menu(void) {
+
+	__asm {
+		mov eax, dword ptr ss : [esp + 0x4]
+		push ebx
+		push ecx
+		push edx
+		push edi
+		push esi
+		push ebp
+
+		push eax
+		call Joystick_Setup_Alt_O_Menu
+		add esp, 0x4
+
+		pop ebp
+		pop esi
+		pop edi
+		pop edx
+		pop ecx
+		pop ebx
+
+		ret 0x4
+	}
+}
+
+
 //___________________________________________________
 static void __declspec(naked) joy_roll_variable(void) {
 
@@ -191,7 +231,7 @@ void Modifications_Joystick() {
 
 	FuncReplace32(0x41ABB7, 0x00054565, (DWORD)&joy_setup);
 	FuncReplace32(0x44028C, 0x0002EE90, (DWORD)&joy_setup);
-	FuncReplace32(0x4564D8, 0x00018C44, (DWORD)&joy_setup);
+	FuncReplace32(0x4564D8, 0x00018C44, (DWORD)&joy_setup_alt_o_menu);
 	FuncReplace32(0x457F45, 0x000171D7, (DWORD)&joy_setup);
 	FuncReplace32(0x45B140, 0x00013FDC, (DWORD)&joy_setup);
 	FuncReplace32(0x46F408, 0xFFFFFD14, (DWORD)&joy_setup);
@@ -266,12 +306,12 @@ void Modifications_Joystick() {
 	FuncReplace32(0x401947, 0x00011505, (DWORD)&joy_setup);
 	FuncReplace32(0x401D06, 0x00011146, (DWORD)&joy_setup);
 	FuncReplace32(0x40AE8D, 0x00007FBF, (DWORD)&joy_setup);
-	FuncReplace32(0x4131D8, 0x0FFFFFC74, (DWORD)&joy_setup);
-	FuncReplace32(0x43CC38, 0x0FFFD6214, (DWORD)&joy_setup);
-	FuncReplace32(0x46B2C8, 0x0FFFA7B84, (DWORD)&joy_setup);
-	FuncReplace32(0x46E2E0, 0x0FFFA4B6C, (DWORD)&joy_setup);
-	FuncReplace32(0x471CFF, 0x0FFFA114D, (DWORD)&joy_setup);
-	FuncReplace32(0x47EF98, 0x0FFF93EB4, (DWORD)&joy_setup);
+	FuncReplace32(0x4131D8, 0xFFFFFC74, (DWORD)&joy_setup);
+	FuncReplace32(0x43CC38, 0xFFFD6214, (DWORD)&joy_setup_alt_o_menu);
+	FuncReplace32(0x46B2C8, 0xFFFA7B84, (DWORD)&joy_setup);
+	FuncReplace32(0x46E2E0, 0xFFFA4B6C, (DWORD)&joy_setup);
+	FuncReplace32(0x471CFF, 0xFFFA114D, (DWORD)&joy_setup);
+	FuncReplace32(0x47EF98, 0xFFF93EB4, (DWORD)&joy_setup);
 
 	//update controllers before checking window messages.
 	MemWrite16(0x4AE1D9, 0x1D88, 0xE890);
