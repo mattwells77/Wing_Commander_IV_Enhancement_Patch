@@ -353,6 +353,8 @@ extern void* p_wc4_play_inflight_hr_movie_return_address;
 
 extern void* p_wc4_mouse_struct;
 
+extern LONG* p_wc4_current_room_id;
+
 extern DWORD* p_wc4_key_scancode;
 
 extern int8_t* p_wc4_vdu_focus;//-1=none, 0=sheilds, 1=, 2=, 3=weapons, 4=comms, 5=damage, 6=power, 7=, 8=rear_view, 9=.

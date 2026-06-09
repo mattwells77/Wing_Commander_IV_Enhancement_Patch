@@ -210,6 +210,7 @@ LONG* p_wc4_crosshair_target_x = nullptr;
 LONG* p_wc4_crosshair_target_y = nullptr;
 LONG* p_wc4_crosshair_target_area_size = nullptr;
 
+LONG* p_wc4_current_room_id = nullptr;
 
 void(__thiscall* wc4_file_init)(void*) = nullptr;
 BOOL(__thiscall* wc4_file_load)(void*, char* path, DWORD dwDesiredAccess, BOOL halt_on_create_file_error, DWORD dwFlagsAndAttributes) = nullptr;
@@ -470,6 +471,8 @@ void WC4W_Setup() {
     wc4_update_joystick = (void(*)())0x488AE0;
     wc4_proccess_joystick_data = (void(*)())0x488DD0;
     wc4_setup_joystick = (void(__stdcall*)(LONG))0x46F120;
+
+    p_wc4_current_room_id = (LONG*)0x4C2424;
 }
 
 #else
@@ -697,5 +700,7 @@ void WC4W_Setup() {
     wc4_update_joystick = (void(*)())0x4AD7A0;
     wc4_proccess_joystick_data = (void(*)())0x4ADB00;
     wc4_setup_joystick = (void(__stdcall*)(LONG))0x412E50;
+
+    p_wc4_current_room_id = (LONG*)0x4C1F24;
 }
 #endif
