@@ -32,6 +32,8 @@ OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 LONG mouse_x_current = 0;
 LONG mouse_y_current = 0;
 
+LONG mouse_client_x = 0;
+LONG mouse_client_y = 0;
 
 //______________________________________________________________________________________
 static LRESULT Update_Mouse_State(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) {
@@ -53,6 +55,9 @@ static LRESULT Update_Mouse_State(HWND hwnd, UINT Message, WPARAM wParam, LPARAM
 
         LONG x = GET_X_LPARAM(lParam);
         LONG y = GET_Y_LPARAM(lParam);
+
+        mouse_client_x = x;
+        mouse_client_y = y;
 
         *p_wc4_mouse_x_space = (WORD)(x * spaceWidth / clientWidth);
         *p_wc4_mouse_y_space = (WORD)(y * spaceHeight / clientHeight);
@@ -120,6 +125,7 @@ static BOOL Set_Mouse_Position(LONG x, LONG y) {
             if ((float)ix != fx)
                 ix++;
             *p_wc4_mouse_x_space = (WORD)(ix * spaceWidth / clientWidth);
+            mouse_client_x = ix;
             ix += client.x;
 
             fy += y * fheight / GUI_HEIGHT;
@@ -127,6 +133,7 @@ static BOOL Set_Mouse_Position(LONG x, LONG y) {
             if ((float)iy != fy)
                 iy++;
             *p_wc4_mouse_y_space = (WORD)(iy * spaceHeight / clientHeight);
+            mouse_client_y = iy;
             iy += client.y;
 
             SetCursorPos(ix, iy);
@@ -167,6 +174,9 @@ static BOOL Update_Cursor_Position(LONG x, LONG y) {
 
             x = (m.x - p.x);
             y = (m.y - p.y);
+
+            mouse_client_x = x;
+            mouse_client_y = y;
 
             *p_wc4_mouse_x_space = (WORD)(x * spaceWidth / clientWidth);
             *p_wc4_mouse_y_space = (WORD)(y * spaceHeight / clientHeight);
@@ -236,23 +246,21 @@ static void Fix_Space_Mouse_Movement(void* p_ship_class, LONG* p_x_roll, LONG* p
     // Maximum turn speed was being defined by the screen resolution formally 640x480.
     // Higher resolutions were allowing for a greater mouse range and thus a higher turning speed than what was otherwise defined in game.
 
-    LONG x = *p_wc4_mouse_x_space - *p_wc4_mouse_centre_x;
-    LONG y = *p_wc4_mouse_y_space - *p_wc4_mouse_centre_y;
+    LONG centre_x = clientWidth / 2;
+    LONG centre_y = clientHeight / 2;
 
-    //keep mouse movement range between -320 and 320 to maintain similar experience as original resolution 640x480.
-    LONG range = *p_wc4_mouse_centre_y;
-    if (*p_wc4_mouse_centre_y > *p_wc4_mouse_centre_x)
-        range = *p_wc4_mouse_centre_x;
-    if (range > 320)
-        range = 320;
+    LONG x = mouse_client_x - centre_x;
+    LONG y = mouse_client_y - centre_y;
 
-    int dead_zone = Mouse.Deadzone();
-    float mouse_unit = 1.25f;
+    LONG range = centre_y;
+    if (centre_y > centre_x)
+        range = centre_x;
 
-    if (range < 320) {
-        dead_zone = range / 320 * dead_zone;
-        mouse_unit = (float)range / 256;
-    }
+    range = range * Mouse.Axis_Limit_Percentage() / 100;
+
+
+    int dead_zone = range * Mouse.Deadzone() / 320;
+    float mouse_unit = (float)range / 256;
 
     //apply a small dead zone (320 / 32 = 10).
     if (x < dead_zone && x > -dead_zone)
@@ -276,6 +284,9 @@ static void Fix_Space_Mouse_Movement(void* p_ship_class, LONG* p_x_roll, LONG* p
 
     *p_x_roll = (LONG)x;
     *p_y_throttle = (LONG)y;
+
+    if (Mouse.Is_Y_Axis_Inverted())
+        y = -y;
 
     LONG* p_position_class = ((LONG**)p_ship_class)[61];
     p_position_class[4] = (LONG)-x;
