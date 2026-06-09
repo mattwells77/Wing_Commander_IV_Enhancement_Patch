@@ -292,9 +292,9 @@ static void __declspec(naked) translate_msg_key_gui(void) {
         call wc4_translate_messages_keys
         //don't check ESC key when using the Main Terminal as the ESC key is used for other purposes there.
         mov eax, p_wc4_current_room_id
-        cmp dword ptr ds : [eax] , 11
+        cmp dword ptr ds : [eax] , 11// load/save
         je exit_func
-        cmp dword ptr ds : [eax] , 13
+        cmp dword ptr ds : [eax] , 13// main terminal
         je exit_func
         pushad
         call Check_Exit_Keys
@@ -369,10 +369,8 @@ void Modifications_Keyboard() {
     FuncReplace32(0x457DD8, 0x031464, (DWORD)&gui_alt_x_message_loop);
     FuncReplace32(0x457DE1, 0x03145B, (DWORD)&gui_alt_x_message_loop);
 
-
-    //0049D74F | .E8 7CB9FEFF           CALL TRANSLATE_MESSAGES_KEYS(); [wc4dvd.TRANSLATE_MESSAGES_KEYS()
+    //use ESC key to evoke Exit screen.
     FuncReplace32(0x49D750, 0xFFFEB97C, (DWORD)&translate_msg_key_gui);
-    //0046F415 | .E8 B69C0100           CALL TRANSLATE_MESSAGES_KEYS(); [wc4dvd.TRANSLATE_MESSAGES_KEYS()
     FuncReplace32(0x46F416, 0x019CB6, (DWORD)&translate_msg_key_space);
 
 	//print scancodes
@@ -404,10 +402,8 @@ void Modifications_Keyboard() {
     FuncReplace32(0x46B1F4, 0x042FA8, (DWORD)&gui_alt_x_message_loop);
     FuncReplace32(0x46B1FD, 0x042F9F, (DWORD)&gui_alt_x_message_loop);
 
-
-    //00498CD9 | .E8 42510100   CALL TRANSLATE_MESSAGES_KEYS(); [wc4w.TRANSLATE_MESSAGES_KEYS()
+    //use ESC key to evoke Exit screen.
     FuncReplace32(0x498CDA, 0x00015142, (DWORD)&translate_msg_key_gui);
-    //004131E6 | .E8 35AC0900   CALL TRANSLATE_MESSAGES_KEYS(); [wc4w.TRANSLATE_MESSAGES_KEYS()
     FuncReplace32(0x4131E7, 0x09AC35, (DWORD)&translate_msg_key_space);
 
 	//print scancodes
