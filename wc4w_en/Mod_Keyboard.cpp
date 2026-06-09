@@ -252,6 +252,75 @@ static void __declspec(naked) gui_alt_x_message_loop(void) {
 	}
 }
 
+
+//___________________________
+static void Check_Exit_Keys() {
+    //Check if ESC key pressed.
+    if (!Get_Key_State(0x1, 0, 0x10))
+        return;
+    Debug_Info("Check_Exit_Keys room: %d", *p_wc4_current_room_id);
+    //send ALT-X key combo to evoke Exit screen.
+    INPUT inputs[4] = {};
+    ZeroMemory(inputs, sizeof(inputs));
+
+    inputs[0].type = INPUT_KEYBOARD;
+    inputs[0].ki.wScan = 0x38;
+    inputs[0].ki.dwFlags = KEYEVENTF_SCANCODE;
+
+    inputs[1].type = INPUT_KEYBOARD;
+    inputs[1].ki.wScan = 0x2D;
+    inputs[1].ki.dwFlags = KEYEVENTF_SCANCODE;
+
+    inputs[2].type = INPUT_KEYBOARD;
+    inputs[2].ki.wScan = 0x2D;
+    inputs[2].ki.dwFlags = KEYEVENTF_KEYUP | KEYEVENTF_SCANCODE;
+
+    inputs[3].type = INPUT_KEYBOARD;
+    inputs[3].ki.wScan = 0x38;
+    inputs[3].ki.dwFlags = KEYEVENTF_KEYUP | KEYEVENTF_SCANCODE;
+
+    UINT uSent = SendInput(4, inputs, sizeof(INPUT));
+    if (uSent != 4)
+        Debug_Info_Error("Send_Exit_Keys - SendInput failed: 0x%x\n", HRESULT_FROM_WIN32(GetLastError()));
+}
+
+
+//_______________________________________________________
+static void __declspec(naked) translate_msg_key_gui(void) {
+
+    __asm {
+        call wc4_translate_messages_keys
+        //don't check ESC key when using the Main Terminal as the ESC key is used for other purposes there.
+        mov eax, p_wc4_current_room_id
+        cmp dword ptr ds : [eax] , 11
+        je exit_func
+        cmp dword ptr ds : [eax] , 13
+        je exit_func
+        pushad
+        call Check_Exit_Keys
+        popad
+        exit_func :
+        ret
+    }
+}
+
+
+//_________________________________________________________
+static void __declspec(naked) translate_msg_key_space(void) {
+
+    __asm {
+        call wc4_translate_messages_keys
+        //don't check ESC key on NAV or other GUI screens in space.
+        cmp current_pro_type, PROFILE_SPACE
+        jne exit_func
+        pushad
+        call Check_Exit_Keys
+        popad
+        exit_func :
+        ret
+    }
+}
+
 /*
 //___________________________
 void Print_Scancode(int code) {
@@ -300,6 +369,12 @@ void Modifications_Keyboard() {
     FuncReplace32(0x457DD8, 0x031464, (DWORD)&gui_alt_x_message_loop);
     FuncReplace32(0x457DE1, 0x03145B, (DWORD)&gui_alt_x_message_loop);
 
+
+    //0049D74F | .E8 7CB9FEFF           CALL TRANSLATE_MESSAGES_KEYS(); [wc4dvd.TRANSLATE_MESSAGES_KEYS()
+    FuncReplace32(0x49D750, 0xFFFEB97C, (DWORD)&translate_msg_key_gui);
+    //0046F415 | .E8 B69C0100           CALL TRANSLATE_MESSAGES_KEYS(); [wc4dvd.TRANSLATE_MESSAGES_KEYS()
+    FuncReplace32(0x46F416, 0x019CB6, (DWORD)&translate_msg_key_space);
+
 	//print scancodes
 	//MemWrite16(0x4ADD0E, 0x918A, 0xE890);
 	//FuncWrite32(0x4ADD10, 0x4CE7C0, (DWORD)&print_scancode);
@@ -328,6 +403,12 @@ void Modifications_Keyboard() {
 	//wait for yes no input in Alt+X message loop.
     FuncReplace32(0x46B1F4, 0x042FA8, (DWORD)&gui_alt_x_message_loop);
     FuncReplace32(0x46B1FD, 0x042F9F, (DWORD)&gui_alt_x_message_loop);
+
+
+    //00498CD9 | .E8 42510100   CALL TRANSLATE_MESSAGES_KEYS(); [wc4w.TRANSLATE_MESSAGES_KEYS()
+    FuncReplace32(0x498CDA, 0x00015142, (DWORD)&translate_msg_key_gui);
+    //004131E6 | .E8 35AC0900   CALL TRANSLATE_MESSAGES_KEYS(); [wc4w.TRANSLATE_MESSAGES_KEYS()
+    FuncReplace32(0x4131E7, 0x09AC35, (DWORD)&translate_msg_key_space);
 
 	//print scancodes
 	//MemWrite16(0x4ADD0E, 0x918A, 0xE890);
