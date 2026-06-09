@@ -1739,6 +1739,8 @@ static void Check_System_Keys(WPARAM wParam, LPARAM lParam) {
                 if (is_cursor_clipped)
                     ClipMouseCursor();
             }
+            else if (wParam == VK_F4) //close window on ALT + F4
+                PostMessage(*p_wc4_hWinMain, WM_CLOSE, 0, 0);
         }
     }
 }
