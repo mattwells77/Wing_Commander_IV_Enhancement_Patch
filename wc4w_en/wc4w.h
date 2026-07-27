@@ -447,3 +447,6 @@ extern void(*wc4_mio_screen_loop)(DWORD Arg1, DWORD Arg2, DWORD Arg3, DWORD Arg4
 extern void(*wc4_update_joystick)();
 extern void(*wc4_proccess_joystick_data)();
 extern void(__stdcall* wc4_setup_joystick)(LONG flag);
+
+extern void(__thiscall* wc4_flight_auto_take_off)(void*);
+extern void(__thiscall* wc4_flight_auto_landing)(void*);

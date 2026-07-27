@@ -244,6 +244,9 @@ void(*wc4_update_joystick)() = nullptr;
 void(*wc4_proccess_joystick_data)() = nullptr;
 void(__stdcall* wc4_setup_joystick)(LONG flag) = nullptr;
 
+void(__thiscall* wc4_flight_auto_take_off)(void*) = nullptr;
+void(__thiscall* wc4_flight_auto_landing)(void*) = nullptr;
+
 
 #ifdef VERSION_WC4_DVD
 //_______________
@@ -473,6 +476,9 @@ void WC4W_Setup() {
     wc4_setup_joystick = (void(__stdcall*)(LONG))0x46F120;
 
     p_wc4_current_room_id = (LONG*)0x4C2424;
+
+    wc4_flight_auto_take_off = (void(__thiscall*)(void*))0x404590;
+    wc4_flight_auto_landing = (void(__thiscall*)(void*))0x404720;
 }
 
 #else
@@ -702,5 +708,8 @@ void WC4W_Setup() {
     wc4_setup_joystick = (void(__stdcall*)(LONG))0x412E50;
 
     p_wc4_current_room_id = (LONG*)0x4C1F24;
+
+    wc4_flight_auto_take_off = (void(__thiscall*)(void*))0x41DD40;
+    wc4_flight_auto_landing = (void(__thiscall*)(void*))0x41DEE0;
 }
 #endif
