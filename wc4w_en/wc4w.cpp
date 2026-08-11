@@ -247,6 +247,12 @@ void(__stdcall* wc4_setup_joystick)(LONG flag) = nullptr;
 void(__thiscall* wc4_flight_auto_take_off)(void*) = nullptr;
 void(__thiscall* wc4_flight_auto_landing)(void*) = nullptr;
 
+LONG(*wc4_shape_draw)(DRAW_BUFFER_MAIN* p_db, void* shape_data, DWORD shape_num, DWORD x, DWORD y) = nullptr;
+DWORD(*wc4_shape_get_width_height)(void* shape_data, DWORD shape_num) = nullptr;
+LONG(*wc4_draw_line)(DRAW_BUFFER_MAIN* p_db, LONG x1, LONG y1, LONG x2, LONG y2, DWORD arg6, DWORD colour_ref) = nullptr;
+
+int16_t* p_wc4_space_x = nullptr;
+int16_t* p_wc4_space_y = nullptr;
 
 #ifdef VERSION_WC4_DVD
 //_______________
@@ -479,6 +485,13 @@ void WC4W_Setup() {
 
     wc4_flight_auto_take_off = (void(__thiscall*)(void*))0x404590;
     wc4_flight_auto_landing = (void(__thiscall*)(void*))0x404720;
+
+    wc4_shape_draw = (LONG(*)(DRAW_BUFFER_MAIN*, void*, DWORD, DWORD, DWORD))0x48D6DC;
+    wc4_shape_get_width_height = (DWORD(*)(void*, DWORD))0x491C46;
+    wc4_draw_line = (LONG(*)(DRAW_BUFFER_MAIN*, LONG, LONG, LONG, LONG, DWORD, DWORD))0x48CBA1;
+
+    p_wc4_space_x = (int16_t*)0x4CCB88;
+    p_wc4_space_y = (int16_t*)0x4CCB8A;
 }
 
 #else
@@ -711,5 +724,12 @@ void WC4W_Setup() {
 
     wc4_flight_auto_take_off = (void(__thiscall*)(void*))0x41DD40;
     wc4_flight_auto_landing = (void(__thiscall*)(void*))0x41DEE0;
+
+    wc4_shape_draw = (LONG(*)(DRAW_BUFFER_MAIN*, void*, DWORD, DWORD, DWORD))0x489014;
+    wc4_shape_get_width_height = (DWORD(*)(void*, DWORD))0x48D57E;
+    wc4_draw_line = (LONG(*)(DRAW_BUFFER_MAIN*, LONG, LONG, LONG, LONG, DWORD, DWORD))0x4884D9;
+
+    p_wc4_space_x = (int16_t*)0x4CCE30;
+    p_wc4_space_y = (int16_t*)0x4CCE32;
 }
 #endif

@@ -563,21 +563,69 @@ static void Display_Space_Scene() {
 //So that we can switch them with the DX11 buffer for drawing 3D space.
 DRAW_BUFFER db_3d_backup = { 0 };
 BYTE* pbuffer_space_3D = nullptr;
+LONG buffer_space_3D_pitch = 0;
+
+BYTE* pbuffer_space_2D = nullptr;
+LONG buffer_space_2D_pitch = 0;
+
+BYTE* pbuffer_space_hud_targeting = nullptr;
+LONG buffer_space_hud_targeting_pitch = 0;
+
+RECT rc_targeting_main{ 0 };
+RECT rc_targeting_scaled{ 0 };
+float f_targeting_x_mul = 0.0f;
+float f_targeting_y_mul = 0.0f;
+
+
+//_____________________________________
+static void Set_Space_3D_Surface_Rect() {
+
+    (**pp_wc4_db_game).buff = pbuffer_space_3D;
+    (**pp_wc4_db_game).rc_inv.left = buffer_space_3D_pitch - 1;
+    (**pp_wc4_db_game).rc_inv.top = spaceHeight - 1;
+
+    (**pp_wc4_db_game_main).rc.left = 0;
+    (**pp_wc4_db_game_main).rc.top = 0;
+    (**pp_wc4_db_game_main).rc.right = spaceWidth - 1;
+    (**pp_wc4_db_game_main).rc.bottom = spaceHeight - 1;
+}
+
+
+//_____________________________________
+static void Set_Space_2D_Surface_Rect() {
+
+    (**pp_wc4_db_game).buff = pbuffer_space_2D;
+    (**pp_wc4_db_game).rc_inv.left = buffer_space_2D_pitch - 1;
+    (**pp_wc4_db_game).rc_inv.top = GUI_HEIGHT - 1;
+
+    (**pp_wc4_db_game_main).rc.left = 0;
+    (**pp_wc4_db_game_main).rc.top = 0;
+    (**pp_wc4_db_game_main).rc.right = GUI_WIDTH - 1;
+    (**pp_wc4_db_game_main).rc.bottom = GUI_HEIGHT - 1;
+}
 
 
 //________________________________
-static void Lock_3DSpace_Surface() {
+static void Lock_Space_Surfaces() {
 
-    if (pbuffer_space_3D != nullptr) {
-        Debug_Info_Error("Lock_3DSpace_Surface - buffer already locked!!!");
-        return;
-    }
-    LONG buffer_space_3D_pitch = 0;
+    if (pbuffer_space_3D != nullptr)
+        Debug_Info_Error("Lock_Space_Surfaces: 3D - buffer already locked!!!");
+    else if (surface_space3D->Lock((VOID**)&pbuffer_space_3D, &buffer_space_3D_pitch) != S_OK)
+        Debug_Info_Error("Lock_Space_Surfaces: 3D - lock failed!!!");
 
-    if (surface_space3D->Lock((VOID**)&pbuffer_space_3D, &buffer_space_3D_pitch) != S_OK) {
-        Debug_Info_Error("Lock_3DSpace_Surface - lock failed!!!");
-        return;
-    }
+    if (pbuffer_space_2D != nullptr)
+        Debug_Info_Error("Lock_Space_Surfaces: 2D - buffer already locked!!!");
+    else if (surface_space2D->Lock((VOID**)&pbuffer_space_2D, &buffer_space_2D_pitch) != S_OK)
+        Debug_Info_Error("Lock_Space_Surfaces: 2D - lock failed!!!");
+    else// clear surface to the mask colour.
+        memset(pbuffer_space_2D, 0xFF, buffer_space_2D_pitch * GUI_HEIGHT);
+
+    if (pbuffer_space_hud_targeting != nullptr)
+        Debug_Info_Error("Lock_Space_Surfaces: Targeting - buffer already locked!!!");
+    else if (surface_space_targeting_hud->Lock((VOID**)&pbuffer_space_hud_targeting, &buffer_space_hud_targeting_pitch) != S_OK)
+        Debug_Info_Error("Lock_Space_Surfaces: Targeting - lock failed!!!");
+    else// clear surface to the mask colour.
+        memset(pbuffer_space_hud_targeting, 0xFF, buffer_space_hud_targeting_pitch * surface_space_targeting_hud->GetHeight());
 
     //backup current buffer data
     db_3d_backup.rc_inv.right = (**pp_wc4_db_game_main).rc.right;
@@ -587,32 +635,25 @@ static void Lock_3DSpace_Surface() {
     db_3d_backup.buff = (*pp_wc4_db_game)->buff;
 
     //set buffer for drawing 3d space elements
-    (**pp_wc4_db_game).buff = pbuffer_space_3D;
-
-    (**pp_wc4_db_game_main).rc.right = spaceWidth - 1;
-    (**pp_wc4_db_game_main).rc.bottom = spaceHeight - 1;
-
-    (**pp_wc4_db_game).rc_inv.left = buffer_space_3D_pitch - 1;
-    (**pp_wc4_db_game).rc_inv.top = spaceHeight - 1;
-
+    Set_Space_3D_Surface_Rect();
 }
 
 
 //_________________________________________________________
-static void Lock_3DSpace_Surface_POV1(void* p_space_class) {
+static void Lock_Space_Surfaces_POV1(void* p_space_class) {
     //Debug_Info("Lock_3DSpace_Surface_POV1 SPACE VIEW POV1 w:%d, h:%d client  w:%d, h:%d", ((WORD*)p_space_class)[4], ((WORD*)p_space_class)[5], clientWidth, clientHeight);
     if (((WORD*)p_space_class)[4] != (WORD)spaceWidth || ((WORD*)p_space_class)[5] != (WORD)spaceHeight) {
-        Debug_Info_Flight("Lock_3DSpace_Surface_POV1 RESIZING SPACE VIEW POV1");
+        //Debug_Info_Flight("Lock_3DSpace_Surface_POV1 RESIZING SPACE VIEW POV1");
         //DWORD* p_cockpit_class = ((DWORD**)p_space_class)[67];
         //Debug_Info("RESIZING SPACE VIEW POV1: %d", p_cockpit_class[8]);
         Set_Space_View_POV1(p_space_class);
     }
-    Lock_3DSpace_Surface();
+    Lock_Space_Surfaces();
 }
 
 
 //___________________________________________________________
-static void __declspec(naked) lock_3dspace_surface_pov1(void) {
+static void __declspec(naked) lock_space_surfaces_pov1(void) {
 
     __asm {
         //push edx
@@ -627,7 +668,7 @@ static void __declspec(naked) lock_3dspace_surface_pov1(void) {
 #else
         push ebx
 #endif
-        call Lock_3DSpace_Surface_POV1
+        call Lock_Space_Surfaces_POV1
         add esp, 0x4
 
 #ifdef VERSION_WC4_DVD
@@ -643,18 +684,18 @@ static void __declspec(naked) lock_3dspace_surface_pov1(void) {
 
 
 //_________________________________________________________
-static void Lock_3DSpace_Surface_POV3(void* p_space_struct) {
+static void Lock_Space_Surfaces_POV3(void* p_space_struct) {
     //Debug_Info("Lock_3DSpace_Surface_POV3");
     if (((WORD*)p_space_struct)[4] != (WORD)spaceWidth || ((WORD*)p_space_struct)[5] != (WORD)spaceHeight) {
         //Debug_Info("RESIZING SPACE VIEW POV3");
         Set_Space_View_POV3((WORD*)p_space_struct, nullptr);
     }
-    Lock_3DSpace_Surface();
+    Lock_Space_Surfaces();
 }
 
 
 //___________________________________________________________
-static void __declspec(naked) lock_3dspace_surface_pov3(void) {
+static void __declspec(naked) lock_space_surfaces_pov3(void) {
 
     __asm {
         //push edx
@@ -668,7 +709,7 @@ static void __declspec(naked) lock_3dspace_surface_pov3(void) {
 #else
         push edi
 #endif
-        call Lock_3DSpace_Surface_POV3
+        call Lock_Space_Surfaces_POV3
         add esp, 0x4
 
         pop edi
@@ -681,16 +722,26 @@ static void __declspec(naked) lock_3dspace_surface_pov3(void) {
 }
 
 
-//__________________________________
-static void UnLock_3DSpace_Surface() {
+//_________________________________
+static void UnLock_Space_Surfaces() {
 
-    if (!pbuffer_space_3D) {
-        Debug_Info_Error("UnLock_3DSpace_Surface - buffer wasn't locked!!!");
-        return;
-    }
-    surface_space3D->Unlock();
+    if (!pbuffer_space_3D)
+        Debug_Info_Error("UnLock_Space_Surfaces: 3D - buffer wasn't locked!!!");
+    else
+        surface_space3D->Unlock();
     pbuffer_space_3D = nullptr;
 
+    if (!pbuffer_space_2D)
+        Debug_Info_Error("UnLock_Space_Surfaces: 2D - buffer wasn't locked!!!");
+    else
+        surface_space2D->Unlock();
+    pbuffer_space_2D = nullptr;
+
+    if (!pbuffer_space_hud_targeting)
+        Debug_Info_Error("UnLock_Space_Surfaces: Targeting - buffer wasn't locked!!!");
+    else
+        surface_space_targeting_hud->Unlock();
+    pbuffer_space_hud_targeting = nullptr;
 
     //restore backup buffer data
     (**pp_wc4_db_game).buff = db_3d_backup.buff;
@@ -700,93 +751,17 @@ static void UnLock_3DSpace_Surface() {
 
     (**pp_wc4_db_game).rc_inv.left = db_3d_backup.rc_inv.left;
     (**pp_wc4_db_game).rc_inv.top = db_3d_backup.rc_inv.top;
-
 }
 
 
-//For storing the general buffer and dimensions, that many functions draw too.
-//So that we can switch them with the DX11 buffer for drawing 2D space.
-DRAW_BUFFER db_2d_backup = { 0 };
-BYTE* pbuffer_space_2D = nullptr;
-LONG buffer_space_2D_pitch = 0;
-
-//________________________________
-static void Lock_2DSpace_Surface() {
-    //Debug_Info("Lock_2DSpace_Surface");
-    if (pbuffer_space_2D != nullptr) {
-        Debug_Info_Error("Lock_2DSpace_Surface - buffer already locked!!!");
-        return;
-    }
-
-    if (surface_space2D->Lock((VOID**)&pbuffer_space_2D, &buffer_space_2D_pitch) != S_OK) {
-        Debug_Info_Error("Lock_2DSpace_Surface - lock failed!!!");
-        return;
-    }
-
-    //backup current buffer data
-    db_2d_backup.rc_inv.right = (**pp_wc4_db_game_main).rc.right;
-    db_2d_backup.rc_inv.bottom = (**pp_wc4_db_game_main).rc.bottom;
-
-    db_2d_backup.rc_inv.left = (**pp_wc4_db_game).rc_inv.left;
-    db_2d_backup.rc_inv.top = (**pp_wc4_db_game).rc_inv.top;
-
-    db_2d_backup.buff = (*pp_wc4_db_game)->buff;
-
-
-    //set buffer for drawing 2d space elements
-    (**pp_wc4_db_game).buff = pbuffer_space_2D;
-
-    (**pp_wc4_db_game_main).rc.right = GUI_WIDTH - 1;
-    (**pp_wc4_db_game_main).rc.bottom = GUI_HEIGHT - 1;
-
-    (**pp_wc4_db_game).rc_inv.left = buffer_space_2D_pitch - 1;
-    (**pp_wc4_db_game).rc_inv.top = GUI_HEIGHT - 1;
-}
-
-
-//__________________________________
-static void UnLock_2DSpace_Surface() {
-    //Debug_Info("UnLock_2DSpace_Surface");
-    if (!pbuffer_space_2D) {
-        Debug_Info_Error("UnLock_2DSpace_Surface - buffer wasn't locked!!!");
-        return;
-    }
-    surface_space2D->Unlock();
-    pbuffer_space_2D = nullptr;
-
-
-    //restore backup buffer data
-    (**pp_wc4_db_game).buff = db_2d_backup.buff;
-
-    (**pp_wc4_db_game_main).rc.right = db_2d_backup.rc_inv.right;
-    (**pp_wc4_db_game_main).rc.bottom = db_2d_backup.rc_inv.bottom;
-
-    (**pp_wc4_db_game).rc_inv.left = db_2d_backup.rc_inv.left;
-    (**pp_wc4_db_game).rc_inv.top = db_2d_backup.rc_inv.top;
-}
-
-
-//_________________________________
-static void Clear_2DSpace_Surface() {
-    if (pbuffer_space_2D == nullptr)
-        return;
-
-    memset(pbuffer_space_2D, 0xFF, buffer_space_2D_pitch * GUI_HEIGHT);
-    //memset(pbuffer_space_2D, 0x00, buffer_space_2D_pitch * GUI_HEIGHT);
-
-}
-
-
-//_____________________________________________________________________________
-static void __declspec(naked) unlock_3dspace_surface_lock_2dspace_surface(void) {
+//___________________________________________________________
+static void __declspec(naked) set_space_2d_surface_rect(void) {
 
     __asm {
         push ebx
         push esi
 
-        call UnLock_3DSpace_Surface
-        call Lock_2DSpace_Surface
-        call Clear_2DSpace_Surface
+        call Set_Space_2D_Surface_Rect
 
         pop esi
         pop ebx
@@ -795,15 +770,15 @@ static void __declspec(naked) unlock_3dspace_surface_lock_2dspace_surface(void) 
 }
 
 
-//____________________________________________________________________
-static void __declspec(naked) unlock_2dspace_surface_and_display(void) {
+//___________________________________________________________________
+static void __declspec(naked) unlock_space_surfaces_and_display(void) {
 
     __asm {
         push ebx
         push ebp
         push esi
 
-        call UnLock_2DSpace_Surface
+        call UnLock_Space_Surfaces
         call Display_Space_Scene
 
         pop esi
@@ -814,8 +789,8 @@ static void __declspec(naked) unlock_2dspace_surface_and_display(void) {
 }
 
 
-//__________________________________________________________________________________
-static void __declspec(naked) unlock_3dspace_surface_lock_2dspace_surface_pov3(void) {
+//________________________________________________________________
+static void __declspec(naked) set_space_2d_surface_rect_pov3(void) {
 
     __asm {
         push ecx
@@ -823,9 +798,7 @@ static void __declspec(naked) unlock_3dspace_surface_lock_2dspace_surface_pov3(v
         push ebp
         push esi
 
-        call UnLock_3DSpace_Surface
-        call Lock_2DSpace_Surface
-        call Clear_2DSpace_Surface
+        call Set_Space_2D_Surface_Rect
 
         pop esi
         pop ebp
@@ -838,54 +811,82 @@ static void __declspec(naked) unlock_3dspace_surface_lock_2dspace_surface_pov3(v
 }
 
 
-//_____________________________________
-static void Fix_CockpitViewTargetRect() {
+//____________________________________________________________
+static void Draw_Hud_Targeting_Elements(void* p_shapes_struct) {
 
-    if (!surface_space2D)
-        return;
-    float x_unit = 0;
-    float y_unit = 0;
-    float x = 0;
-    float y = 0;
-    surface_space2D->GetPosition(&x, &y);
-    surface_space2D->GetScaledPixelDimensions(&x_unit, &y_unit);
+    int16_t space_x_bak = *p_wc4_space_x;
+    int16_t space_y_bak = *p_wc4_space_y;
 
-    if (is_space_scaled) {
-        float space_scale_x = (float)spaceWidth / clientWidth;
-        float space_scale_y = (float)spaceHeight / clientHeight;
-        x *= space_scale_x;
-        y *= space_scale_y;
-        x_unit *= space_scale_x;
-        y_unit *= space_scale_y;
+
+
+    //set main draw buffer to targeting buffer
+    (**pp_wc4_db_game).buff = pbuffer_space_hud_targeting;
+    (**pp_wc4_db_game).rc_inv.left = buffer_space_hud_targeting_pitch - 1;
+    (**pp_wc4_db_game).rc_inv.top = surface_space_targeting_hud->GetHeight() - 1;
+
+    RECT* p_rc_cockpit = (RECT*)((BYTE*)p_shapes_struct + 4);
+
+
+    if (p_rc_cockpit->left != -1 || space_use_original_aspect) {
+
+        float x_unit = 1.0f;
+        float y_unit = 1.0f;
+        float x = 0;
+        float y = 0;
+        surface_space2D->GetPosition(&x, &y);
+        surface_space2D->GetScaledPixelDimensions(&x_unit, &y_unit);
+
+        if (is_space_scaled) {
+            float space_scale_x = (float)spaceWidth / clientWidth;
+            float space_scale_y = (float)spaceHeight / clientHeight;
+            x *= space_scale_x;
+            y *= space_scale_y;
+            x_unit *= space_scale_x;
+            y_unit *= space_scale_y;
+        }
+
+        if (p_rc_cockpit->left != -1) {
+            (**pp_wc4_db_game_main).rc.left = (LONG)(p_rc_cockpit->left * x_unit + x);
+            (**pp_wc4_db_game_main).rc.top = (LONG)(p_rc_cockpit->top * y_unit + y);
+            (**pp_wc4_db_game_main).rc.right = (LONG)(p_rc_cockpit->right * x_unit + x);
+            (**pp_wc4_db_game_main).rc.bottom = (LONG)(p_rc_cockpit->bottom * y_unit + y);
+        }
+        else if (space_use_original_aspect) {
+            (**pp_wc4_db_game_main).rc.left = (LONG)(x);
+            (**pp_wc4_db_game_main).rc.top = (LONG)(y);
+            (**pp_wc4_db_game_main).rc.right = (LONG)((GUI_WIDTH - 1) * x_unit + x);
+            (**pp_wc4_db_game_main).rc.bottom = (LONG)((GUI_HEIGHT - 1) * y_unit + y);
+        }
+
+        *p_wc4_space_x -= (int16_t)(**pp_wc4_db_game_main).rc.left;
+        *p_wc4_space_y -= (int16_t)(**pp_wc4_db_game_main).rc.top;
     }
-    (**pp_wc4_db_game_main).rc.left = (LONG)((**pp_wc4_db_game_main).rc.left * x_unit + x);
-    (**pp_wc4_db_game_main).rc.top = (LONG)((**pp_wc4_db_game_main).rc.top * y_unit + y);
-    (**pp_wc4_db_game_main).rc.right = (LONG)((**pp_wc4_db_game_main).rc.right * x_unit + x);
-    (**pp_wc4_db_game_main).rc.bottom = (LONG)((**pp_wc4_db_game_main).rc.bottom * y_unit + y);
-}
-
-
-//______________________________________________________________
-static void __declspec(naked) fix_cockpit_view_target_rect(void) {
-
-    __asm {
-        push ebx
-        push edi
-        push esi
-        call Fix_CockpitViewTargetRect
-        pop esi
-        pop edi
-        pop ebx
-        
-#ifdef VERSION_WC4_DVD
-        mov eax, pp_wc4_db_game_main
-        mov eax, dword ptr ds : [eax]
-#else
-        mov ecx, pp_wc4_db_game_main
-        mov ecx, dword ptr ds : [ecx]
-#endif
-        ret
+    else {
+        //set main draw buffer rect to correctly calculate line and image positions relating to 3D objects.
+        (**pp_wc4_db_game_main).rc.left = 0;
+        (**pp_wc4_db_game_main).rc.top = 0;
+        (**pp_wc4_db_game_main).rc.right = spaceWidth - 1;
+        (**pp_wc4_db_game_main).rc.bottom = spaceHeight - 1;
     }
+
+    memcpy(&rc_targeting_main, &(**pp_wc4_db_game_main).rc, sizeof(RECT));
+
+
+    f_targeting_y_mul = (float)surface_space_targeting_hud->GetHeight() / spaceHeight;
+    f_targeting_x_mul = (float)surface_space_targeting_hud->GetWidth() / spaceWidth;
+
+    rc_targeting_scaled.left = (LONG)((**pp_wc4_db_game_main).rc.left * f_targeting_x_mul);
+    rc_targeting_scaled.top = (LONG)((**pp_wc4_db_game_main).rc.top * f_targeting_y_mul);
+    rc_targeting_scaled.right = (LONG)((**pp_wc4_db_game_main).rc.right * f_targeting_x_mul);
+    rc_targeting_scaled.bottom = (LONG)((**pp_wc4_db_game_main).rc.bottom * f_targeting_y_mul);
+
+
+    wc4_draw_hud_targeting_elements(p_shapes_struct);
+
+    *p_wc4_space_x = space_x_bak;
+    *p_wc4_space_y = space_y_bak;
+
+    Set_Space_2D_Surface_Rect();
 }
 
 
@@ -900,12 +901,8 @@ static void __declspec(naked) draw_hud_targeting_elements(void) {
         push edi
 
         push ecx
-        call Lock_3DSpace_Surface
-        pop ecx
-
-        call wc4_draw_hud_targeting_elements
-
-        call UnLock_3DSpace_Surface
+        call Draw_Hud_Targeting_Elements
+        add esp, 0x4
 
         pop edi
         pop esi
@@ -920,7 +917,7 @@ static void __declspec(naked) draw_hud_targeting_elements(void) {
 //_________________________________________________________________________________________________________________________________________
 static BOOL Draw_HUD_Tractor_Beam_Targeting_Circle(DRAW_BUFFER_MAIN* p_toBuff, LONG x, LONG y, DWORD width, DWORD height, DWORD pal_offset) {
     
-    Lock_3DSpace_Surface();
+    Set_Space_3D_Surface_Rect();
 
     //fix width and height of tractor circle.
     float length = (float)spaceHeight;
@@ -931,20 +928,44 @@ static BOOL Draw_HUD_Tractor_Beam_Targeting_Circle(DRAW_BUFFER_MAIN* p_toBuff, L
 
     BOOL ret_val = wc4_draw_circle(p_toBuff, x, y, width, height, pal_offset);
 
-    UnLock_3DSpace_Surface();
+    Set_Space_2D_Surface_Rect();
 
     return ret_val;
 }
 
 
-//___________________________________________
-static LONG Fix_Hud_Targeting_Rect_Max_Size() {
+//______________________________________________________
+static LONG Fix_Hud_Targeting_Rect_Size(int side_length) {
 
     float length = (float)spaceHeight;
     if (spaceWidth < spaceHeight)
         length = (float)spaceWidth;
-    //28 was the original max value.
-    return (LONG)(length / 480.0f * 28.0f);
+
+    return (LONG)(length / 480.0f * side_length);
+}
+
+
+//_________________________________________________________________
+static void __declspec(naked) fix_hud_targeting_rect_min_size(void) {
+
+    __asm {
+        push eax
+        push ecx
+        push esi
+        push edi
+
+        push 5
+        call Fix_Hud_Targeting_Rect_Size
+        add esp, 0x4
+
+        mov edx, eax
+
+        pop edi
+        pop esi
+        pop ecx
+        pop eax
+        ret
+    }
 }
 
 
@@ -957,7 +978,10 @@ static void __declspec(naked) fix_hud_targeting_rect_max_size(void) {
         push esi
         push edi
  
-        call Fix_Hud_Targeting_Rect_Max_Size
+        push 28
+        call Fix_Hud_Targeting_Rect_Size
+        add esp, 0x4
+
         mov edx, eax
 
         pop edi
@@ -966,6 +990,51 @@ static void __declspec(naked) fix_hud_targeting_rect_max_size(void) {
         pop eax
         ret
     }
+}
+
+
+//_____________________________________________________________________________________________________________________________
+static LONG Draw_Space_Targeting_Line(DRAW_BUFFER_MAIN* p_db, LONG x1, LONG y1, LONG x2, LONG y2, DWORD arg6, DWORD colour_ref) {
+
+    memcpy(&(**pp_wc4_db_game_main).rc, &rc_targeting_scaled, sizeof(RECT));
+
+    x1 = (LONG)((float)x1 * f_targeting_x_mul);
+    y1 = (LONG)((float)y1 * f_targeting_y_mul);
+    x2 = (LONG)((float)x2 * f_targeting_x_mul);
+    y2 = (LONG)((float)y2 * f_targeting_y_mul);
+
+    LONG ret = wc4_draw_line(p_db, x1, y1, x2, y2, arg6, colour_ref);
+
+    memcpy(&(**pp_wc4_db_game_main).rc, &rc_targeting_main, sizeof(RECT));
+    return ret;
+}
+
+
+//_________________________________________________________________________________________________________________
+static LONG Draw_Space_Targeting_Shape(DRAW_BUFFER_MAIN* p_db, void* shape_data, DWORD shape_num, DWORD x, DWORD y) {
+
+    memcpy(&(**pp_wc4_db_game_main).rc, &rc_targeting_scaled, sizeof(RECT));
+
+    x = (LONG)((float)x * f_targeting_x_mul);
+    y = (LONG)((float)y * f_targeting_y_mul);
+    LONG ret = wc4_shape_draw(p_db, shape_data, shape_num, x, y);
+
+    memcpy(&(**pp_wc4_db_game_main).rc, &rc_targeting_main, sizeof(RECT));
+    return ret;
+}
+
+
+//__________________________________________________________________________________________________________
+static DWORD Get_Space_Targeting_Shape_WidthHeight_Locked_Direction_Marker(void* shape_data, LONG shape_num) {
+
+    DWORD wh = wc4_shape_get_width_height(shape_data, shape_num);
+
+    int16_t h = wh >> 16;
+    int16_t w = wh & 0x0000FFFF;
+
+    w = (int16_t)(w / f_targeting_x_mul);
+    h = (int16_t)(h / f_targeting_y_mul);
+    return (w & 0x0000FFFF) | ((h & 0x0000FFFF) << 16);
 }
 
 
@@ -983,13 +1052,12 @@ static void __declspec(naked) set_input_profile_nav_map_3d_draw(void) {
         push edi
 
         push ecx
-
-        call Lock_3DSpace_Surface
-
+        call Lock_Space_Surfaces
         pop ecx
+
         call wc4_nav_screen
 
-        call UnLock_3DSpace_Surface
+        call UnLock_Space_Surfaces
 
         pop edi
         pop ebp
@@ -1004,8 +1072,8 @@ static void __declspec(naked) set_input_profile_nav_map_3d_draw(void) {
 }
 
 
-//___________________________________________________________________
-static void __declspec(naked) nav_unlock_3d_and_lock_2d_drawing(void) {
+//_______________________________________________________________
+static void __declspec(naked) set_space_2d_surface_rect_nav(void) {
 
     __asm {
         push eax
@@ -1016,9 +1084,7 @@ static void __declspec(naked) nav_unlock_3d_and_lock_2d_drawing(void) {
         push edi
         push ebp
 
-        call UnLock_3DSpace_Surface
-        call Lock_2DSpace_Surface
-        call Clear_2DSpace_Surface
+        call Set_Space_2D_Surface_Rect
 
         pop ebp
         pop edi
@@ -1042,18 +1108,18 @@ static void __declspec(naked) nav_unlock_3d_and_lock_2d_drawing(void) {
 }
 
 
-//_____________________________________________________________________
-static void __declspec(naked) nav_unlock_2d_and_display_relock_3d(void) {
+//___________________________________________________________
+static void __declspec(naked) nav_unlock_display_relock(void) {
 
     __asm {
         push ebp
         push esi
 
-        call UnLock_2DSpace_Surface
+        call UnLock_Space_Surfaces
         mov is_nav_view, 1
         call Display_Space_Scene
         mov is_nav_view, 0
-        call Lock_3DSpace_Surface
+        call Lock_Space_Surfaces
 
         pop esi
         pop ebp
@@ -1844,19 +1910,19 @@ void Modifications_Display() {
 
     //replace direct draw lock surface in draw space first person view function
     MemWrite16(0x409BD2, 0x1D39, 0xE890);
-    FuncWrite32(0x409BD4, 0x4B7214, (DWORD)&lock_3dspace_surface_pov1);
+    FuncWrite32(0x409BD4, 0x4B7214, (DWORD)&lock_space_surfaces_pov1);
     MemWrite8(0x409BD8, 0x74, 0xEB);//jmp over ddraw stuff
 
-    //replace direct draw stuff in draw space first person view function - unlock 3d space surface then lock 2d surface for hud etc.
+    //replace direct draw stuff in draw space first person view function - set 2d surface for hud etc.
     MemWrite16(0x409CCC, 0x840F, 0x9090);//prevent jumping before this is called
     MemWrite32(0x409CCE, 0xFB, 0x90909090);
 
     MemWrite16(0x409CD2, 0x1D39, 0xE890);
-    FuncWrite32(0x409CD4, 0x4BBD4C, (DWORD)&unlock_3dspace_surface_lock_2dspace_surface);
+    FuncWrite32(0x409CD4, 0x4BBD4C, (DWORD)&set_space_2d_surface_rect);
     MemWrite16(0x409CD8, 0x840F, 0xE990);//jmp over ddraw stuff
 
-    //replace direct draw stuff in draw space first person view function - unlock 2d surface then display.
-    FuncReplace32(0x409E22, 0x06C6CA, (DWORD)&unlock_2dspace_surface_and_display);
+    //replace direct draw stuff in draw space first person view function - unlock space surfaces and display.
+    FuncReplace32(0x409E22, 0x06C6CA, (DWORD)&unlock_space_surfaces_and_display);
 
     //draw targeting elements to 3d space
     FuncReplace32(0x40EB5E, 0x05C4BE, (DWORD)&draw_hud_targeting_elements);
@@ -1864,40 +1930,79 @@ void Modifications_Display() {
     //draw tractor beam targeting circle to 3D space
     FuncReplace32(0x40ED0F, 0x080ED5, (DWORD)&Draw_HUD_Tractor_Beam_Targeting_Circle);
 
+    //fix the min size of targeting rect to match the ratio between it and the original screen size.
+    MemWrite8(0x46C04F, 0xBA, 0xE8);
+    FuncWrite32(0x46C050, 0x05, (DWORD)&fix_hud_targeting_rect_min_size);
+
     //fix the max size of targeting rect to match the ratio between it and the original screen size.
     MemWrite8(0x46C06D, 0xBA, 0xE8);
     FuncWrite32(0x46C06E, 0x1C, (DWORD)&fix_hud_targeting_rect_max_size);
 
+    //replace direct draw lock surface in draw space third person view function.
     MemWrite8(0x4067E4, 0xA1, 0xE8);
-    FuncWrite32(0x4067E5, 0x4B7214, (DWORD)&lock_3dspace_surface_pov3);
+    FuncWrite32(0x4067E5, 0x4B7214, (DWORD)&lock_space_surfaces_pov3);
     MemWrite16(0x4067E9, 0xC085, 0x9090);
     MemWrite8(0x4067EB, 0x74, 0xEB);//jmp over ddraw stuff
 
-    //replace direct draw stuff in draw space third person view function - unlock 3d space surface then lock 2d surface for text etc.
-    FuncReplace32(0x4068D8, 0x044504, (DWORD)&unlock_3dspace_surface_lock_2dspace_surface_pov3);
+    //replace direct draw stuff in draw space third person view function - set 2d surface for text etc.
+    FuncReplace32(0x4068D8, 0x044504, (DWORD)&set_space_2d_surface_rect_pov3);
 
-    //replace direct draw stuff in draw space third person view function - unlock 2d surface then display.
-    FuncReplace32(0x406901, 0x06FBEB, (DWORD)&unlock_2dspace_surface_and_display);
+    //replace direct draw stuff in draw space third person view function - unlock space surfaces and display.
+    FuncReplace32(0x406901, 0x06FBEB, (DWORD)&unlock_space_surfaces_and_display);
 
     //replace space third person view setup function
     MemWrite16(0x482260, 0x448B, 0xE990);
     FuncWrite32(0x482262, 0x8B660424, (DWORD)&set_space_view_pov3);
     MemWrite16(0x482266, 0x0C50, 0x9090);
 
-    //fix display rectangle for targeting elements
-    MemWrite8(0x46B0B8, 0xA1, 0xE8);
-    FuncWrite32(0x46B0B9, 0x4C5074, (DWORD)&fix_cockpit_view_target_rect);
+    //skip adjusting targeting hud to cockpit window, this is now done in Draw_Hud_Targeting_Elements
+    MemWrite16(0x46B04C, 0x840F, 0xE990);
+    MemWrite8(0x46B9EE, 0x74, 0xEB);
 
     //draw nav screen space view to 3d surface, seperate from 2d elements
     FuncReplace32(0x44530F, 0x2D, (DWORD)&set_input_profile_nav_map_3d_draw);
 
     //set 2d surface for drawing nav screen 2d elements
     MemWrite8(0x445564, 0x8D, 0xE8);
-    FuncWrite32(0x445565, 0xCB031704, (DWORD)&nav_unlock_3d_and_lock_2d_drawing);
+    FuncWrite32(0x445565, 0xCB031704, (DWORD)&set_space_2d_surface_rect_nav);
 
     //set 3d surface after drawing nav screen 2d elements
     MemWrite16(0x4457B4, 0x15FF, 0xE890);
-    FuncWrite32(0x4457B6, 0x4B7238, (DWORD)&nav_unlock_2d_and_display_relock_3d);
+    FuncWrite32(0x4457B6, 0x4B7238, (DWORD)&nav_unlock_display_relock);
+
+    //draw nav point cross marker
+    FuncReplace32(0x46BBA2, 0x021B36, (DWORD)&Draw_Space_Targeting_Shape);
+
+    //fix position of locked target offscreen direction marker
+    FuncReplace32(0x46B278, 0x0269CA, (DWORD)&Get_Space_Targeting_Shape_WidthHeight_Locked_Direction_Marker);
+    //draw locked target offscreen direction marker
+    FuncReplace32(0x46B483, 0x022255, (DWORD)&Draw_Space_Targeting_Shape);
+
+    //draw locked target leading marker
+    FuncReplace32(0x46BEFD, 0x0217DB, (DWORD)&Draw_Space_Targeting_Shape);
+
+    //draw missile lock target markers
+    FuncReplace32(0x46B81E, 0x021EBA, (DWORD)&Draw_Space_Targeting_Shape);
+    FuncReplace32(0x46B84B, 0x021E8D, (DWORD)&Draw_Space_Targeting_Shape);
+    FuncReplace32(0x46B878, 0x021E60, (DWORD)&Draw_Space_Targeting_Shape);
+    FuncReplace32(0x46B8A4, 0x021E34, (DWORD)&Draw_Space_Targeting_Shape);
+
+    //draw locked target lines
+    FuncReplace32(0x46C0D8, 0x020AC5, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x46C0F2, 0x020AAB, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x46C10B, 0x020A92, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x46C125, 0x020A78, (DWORD)&Draw_Space_Targeting_Line);
+
+    //draw unlocked target lines
+    FuncReplace32(0x46C155, 0x020A48, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x46C179, 0x020A24, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x46C19F, 0x0209FE, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x46C1BD, 0x0209E0, (DWORD)&Draw_Space_Targeting_Line);
+
+    FuncReplace32(0x46C1DB, 0x0209C2, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x46C1FD, 0x0209A0, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x46C217, 0x020986, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x46C230, 0x02096D, (DWORD)&Draw_Space_Targeting_Line);
 
     //Set space subtitle text background colour to 0. As original 255 coflicts with the mask colour being used to draw all cockpit/hud elements to a seperate surface.
     MemWrite8(0x44AF4D, 0xFF, 0x00);
@@ -2062,27 +2167,31 @@ void Modifications_Display() {
     MemWrite16(0x4167A0, 0x6D74, 0x9090);//prevent jumping before this is called
 
     MemWrite8(0x4167A2, 0xA1, 0xE8);
-    FuncWrite32(0x4167A3, 0x4D9820, (DWORD)&lock_3dspace_surface_pov1);
+    FuncWrite32(0x4167A3, 0x4D9820, (DWORD)&lock_space_surfaces_pov1);
     MemWrite16(0x4167A7, 0xC085, 0x9090);
     MemWrite8(0x4167A9, 0x74, 0xEB);//jmp over ddraw stuff
 
-    //replace direct draw stuff in draw space first person view function - unlock 3d space surface then lock 2d surface for hud etc.
+    //replace direct draw stuff in draw space first person view function - set 2d surface for hud etc.
     MemWrite16(0x4168A4, 0x840F, 0x9090);//prevent jumping before this is called
     MemWrite32(0x4168A6, 0x0113, 0x90909090);
 
     MemWrite8(0x4168AA, 0xA1, 0xE8);
-    FuncWrite32(0x4168AB, 0x4D9820, (DWORD)&unlock_3dspace_surface_lock_2dspace_surface);
+    FuncWrite32(0x4168AB, 0x4D9820, (DWORD)&set_space_2d_surface_rect);
     MemWrite16(0x4168AF, 0xC085, 0x9090);
     MemWrite16(0x4168B1, 0x840F, 0xE990);//jmp over ddraw stuff
 
-    //replace direct draw stuff in draw space first person view function - unlock 2d surface then display.
-    FuncReplace32(0x416A1A, 0xFFFF93D2, (DWORD)&unlock_2dspace_surface_and_display);
+    //replace direct draw stuff in draw space first person view function - unlock space surfaces and display.
+    FuncReplace32(0x416A1A, 0xFFFF93D2, (DWORD)&unlock_space_surfaces_and_display);
 
     //draw targeting elements to 3d space
     FuncReplace32(0x420981, 0x540B, (DWORD)&draw_hud_targeting_elements);
 
     //draw tractor beam targeting circle to 3D space
     FuncReplace32(0x420B58, 0x06A9C4, (DWORD)&Draw_HUD_Tractor_Beam_Targeting_Circle);
+ 
+    //fix the min size of targeting rect to match the ratio between it and the original screen size.
+    MemWrite8(0x426FF0, 0xBA, 0xE8);
+    FuncWrite32(0x426FF1, 0x05, (DWORD)&fix_hud_targeting_rect_min_size);
 
     //fix the max size of targeting rect to match the ratio between it and the original screen size.
     MemWrite8(0x427018, 0xBA, 0xE8);
@@ -2092,35 +2201,68 @@ void Modifications_Display() {
     MemWrite16(0x4140CC, 0x6374, 0x9090);//prevent jumping before this is called
 
     MemWrite8(0x4140CE, 0xA1, 0xE8);
-    FuncWrite32(0x4140CF, 0x4D9820, (DWORD)&lock_3dspace_surface_pov3);
+    FuncWrite32(0x4140CF, 0x4D9820, (DWORD)&lock_space_surfaces_pov3);
     MemWrite16(0x4140D3, 0xC085, 0x9090);
     MemWrite8(0x4140D5, 0x74, 0xEB);//jmp over ddraw stuff
  
-    //replace direct draw stuff in draw space third person view function - unlock 3d space surface then lock 2d surface for text etc.
-    FuncReplace32(0x4141C4, 0xFFFFF958, (DWORD)&unlock_3dspace_surface_lock_2dspace_surface_pov3);
+    //replace direct draw stuff in draw space third person view function - set 2d surface for text etc.
+    FuncReplace32(0x4141C4, 0xFFFFF958, (DWORD)&set_space_2d_surface_rect_pov3);
 
-    //replace direct draw stuff in draw space third person view function - unlock 2d surface then display.
-    FuncReplace32(0x4141ED, 0xFFFFBBFF, (DWORD)&unlock_2dspace_surface_and_display);
+    //replace direct draw stuff in draw space third person view function - unlock space surfaces and display.
+    FuncReplace32(0x4141ED, 0xFFFFBBFF, (DWORD)&unlock_space_surfaces_and_display);
 
     //replace space third person view setup function
     MemWrite8(0x4A1000, 0x56, 0xE9);
     FuncWrite32(0x4A1001, 0x0824748B, (DWORD)&set_space_view_pov3);
 
-    //fix display rectangle for targeting elements
-    MemWrite16(0x425E28, 0x0D8B, 0xE890);
-    FuncWrite32(0x425E2A, 0x4D40A4, (DWORD)&fix_cockpit_view_target_rect);
+    //skip adjusting targeting hud to cockpit window, this is now done in Draw_Hud_Targeting_Elements
+    MemWrite16(0x425DB6, 0x840F, 0xE990);
+    MemWrite8(0x4268EE, 0x74, 0xEB);
 
     //draw nav screen space view to 3d surface, seperate from 2d elements
     FuncReplace32(0x41A9D2, 0x2A, (DWORD)&set_input_profile_nav_map_3d_draw);
 
     //set 2d surface for drawing nav screen 2d elements
     MemWrite8(0x41AC9E, 0x03, 0xE8);
-    FuncWrite32(0x41AC9F, 0xCD034FCF, (DWORD)&nav_unlock_3d_and_lock_2d_drawing);
+    FuncWrite32(0x41AC9F, 0xCD034FCF, (DWORD)&set_space_2d_surface_rect_nav);
   
     //set 3d surface after drawing nav screen 2d elements
     MemWrite16(0x41AEE1, 0x15FF, 0xE890);
-    FuncWrite32(0x41AEE3, 0x4D4114, (DWORD)&nav_unlock_2d_and_display_relock_3d);
+    FuncWrite32(0x41AEE3, 0x4D4114, (DWORD)&nav_unlock_display_relock);
 
+    //draw nav point cross marker
+    FuncReplace32(0x426AA4, 0x06256C, (DWORD)&Draw_Space_Targeting_Shape);
+
+    //fix position of locked target offscreen direction marker
+    FuncReplace32(0x42607B, 0x0674FF, (DWORD)&Get_Space_Targeting_Shape_WidthHeight_Locked_Direction_Marker);
+    //draw locked target offscreen direction marker
+    FuncReplace32(0x42633A, 0x062CD6, (DWORD)&Draw_Space_Targeting_Shape);
+
+    //draw locked target leading marker
+    FuncReplace32(0x426EB8, 0x062158, (DWORD)&Draw_Space_Targeting_Shape);
+
+    //draw missile lock target markers
+    FuncReplace32(0x4266DA, 0x062936, (DWORD)&Draw_Space_Targeting_Shape);
+    FuncReplace32(0x426706, 0x06290A, (DWORD)&Draw_Space_Targeting_Shape);
+    FuncReplace32(0x426731, 0x0628DF, (DWORD)&Draw_Space_Targeting_Shape);
+    FuncReplace32(0x42675D, 0x0628B3, (DWORD)&Draw_Space_Targeting_Shape);
+
+    //draw locked target lines
+    FuncReplace32(0x42709D, 0x061438, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x4270B8, 0x06141D, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x4270D2, 0x061403, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x4270ED, 0x0613E8, (DWORD)&Draw_Space_Targeting_Line);
+
+    //draw unlocked target lines
+    FuncReplace32(0x427121, 0x0613B4, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x427141, 0x061394, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x427163, 0x061372, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x42717E, 0x061357, (DWORD)&Draw_Space_Targeting_Line);
+
+    FuncReplace32(0x42719B, 0x06133A, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x4271BE, 0x061317, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x4271DB, 0x0612FA, (DWORD)&Draw_Space_Targeting_Line);
+    FuncReplace32(0x4271F5, 0x0612E0, (DWORD)&Draw_Space_Targeting_Line);
 
     //Set space subtitle text background colour to 0. As original 255 coflicts with the mask colour being used to draw all cockpit/hud elements to a seperate surface.
     MemWrite8(0x413CB8, 0xFF, 0x00);

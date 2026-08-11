@@ -115,6 +115,7 @@ PAL_DX* main_pal = nullptr;
 DrawSurface8_RT* surface_gui = nullptr;
 DrawSurface* surface_space3D = nullptr;
 DrawSurface8_RT* surface_space2D = nullptr;
+DrawSurface8_RT* surface_space_targeting_hud = nullptr;
 DrawSurface8_RT* surface_movieXAN = nullptr;
 
 RenderTarget* rt_display = nullptr;
@@ -285,6 +286,20 @@ static void Surfaces_Setup(UINT width, UINT height) {
             surface_space3D = new DrawSurface(0, 0, width, height, 8, 0x00000000);
         }
     }
+    if (surface_space_targeting_hud == nullptr) {
+        DWORD hud_w = GUI_WIDTH;
+        DWORD hud_h = GUI_HEIGHT;
+        float spaceRO = (float)spaceWidth / spaceHeight;
+        if (spaceRO > (float)GUI_WIDTH / GUI_HEIGHT)
+            hud_w = (DWORD)((float)hud_h * spaceRO);
+        else
+            hud_h = (DWORD)((float)hud_w / spaceRO);
+
+        surface_space_targeting_hud = new DrawSurface8_RT(0, 0, hud_w, hud_h, 32, 0x00000000, true, 255);
+        surface_space_targeting_hud->ScaleTo((float)width, (float)height, SCALE_TYPE::fill);
+        if (!ConfigReadInt(L"MAIN", L"ENABLE_LINEAR_UPSCALING_COCKPIT_HUD", CONFIG_MAIN_ENABLE_LINEAR_UPSCALING_COCKPIT_HUD))
+            surface_space_targeting_hud->Set_Default_SamplerState(pd3dPS_SamplerState_Point);
+    }
     Debug_Info("Surfaces_Setup Done");
 }
 
@@ -329,6 +344,23 @@ static void Surfaces_Resize(UINT width, UINT height) {
         surface_space3D = new DrawSurface(0, 0, width, height, 8, 0x00000000);
     }
 
+    if (surface_space_targeting_hud)
+        delete surface_space_targeting_hud;
+    surface_space_targeting_hud = nullptr;
+
+    DWORD hud_w = GUI_WIDTH;
+    DWORD hud_h = GUI_HEIGHT;
+    float spaceRO = (float)spaceWidth / spaceHeight;
+    if (spaceRO > (float)GUI_WIDTH / GUI_HEIGHT)
+        hud_w = (DWORD)((float)hud_h * spaceRO);
+    else
+        hud_h = (DWORD)((float)hud_w / spaceRO);
+
+    surface_space_targeting_hud = new DrawSurface8_RT(0, 0, hud_w, hud_h, 32, 0x00000000, true, 255);
+    surface_space_targeting_hud->ScaleTo((float)width, (float)height, SCALE_TYPE::fill);
+    if (!ConfigReadInt(L"MAIN", L"ENABLE_LINEAR_UPSCALING_COCKPIT_HUD", CONFIG_MAIN_ENABLE_LINEAR_UPSCALING_COCKPIT_HUD))
+        surface_space_targeting_hud->Set_Default_SamplerState(pd3dPS_SamplerState_Point);
+
     Debug_Info("Surfaces_Resize Done - space w:%d, h:%d", surface_space3D->GetWidth(), surface_space3D->GetHeight());
 }
 
@@ -351,6 +383,10 @@ static void Surfaces_Destroy() {
     if (surface_space3D)
         delete surface_space3D;
     surface_space3D = nullptr;
+
+    if (surface_space_targeting_hud)
+        delete surface_space_targeting_hud;
+    surface_space_targeting_hud = nullptr;
 
     Debug_Info("Surfaces_Destroy Done");
 }
@@ -402,6 +438,8 @@ void Display_Dx_Present(PRESENT_TYPE present_type) {
         }
         if (surface_space3D)
             surface_space3D->Display();
+        if (surface_space_targeting_hud)
+            surface_space_targeting_hud->Display();
 
         if (pMovie_vlc_Inflight && p_wc4_camera_01->view_type == SPACE_VIEW_TYPE::CockHud)
             pMovie_vlc_Inflight->Display();

@@ -381,6 +381,10 @@ extern LONG* p_wc4_crosshair_target_x;
 extern LONG* p_wc4_crosshair_target_y;
 extern LONG* p_wc4_crosshair_target_area_size;
 
+extern int16_t* p_wc4_space_x;
+extern int16_t* p_wc4_space_y;
+
+
 extern BOOL(*wc4_draw_circle)(DRAW_BUFFER_MAIN* p_toBuff, LONG x, LONG y, DWORD width, DWORD height, DWORD pal_offset);
 
 extern void(__thiscall* wc4_draw_hud_targeting_elements)(void*);
@@ -450,3 +454,7 @@ extern void(__stdcall* wc4_setup_joystick)(LONG flag);
 
 extern void(__thiscall* wc4_flight_auto_take_off)(void*);
 extern void(__thiscall* wc4_flight_auto_landing)(void*);
+
+extern LONG(*wc4_shape_draw)(DRAW_BUFFER_MAIN* p_db, void* shape_data, DWORD shape_num, DWORD x, DWORD y);
+extern DWORD(*wc4_shape_get_width_height)(void* shape_data, DWORD shape_num);
+extern LONG(*wc4_draw_line)(DRAW_BUFFER_MAIN* p_db, LONG x1, LONG y1, LONG x2, LONG y2, DWORD arg6, DWORD colour_ref);
