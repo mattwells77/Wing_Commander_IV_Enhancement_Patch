@@ -949,6 +949,10 @@ void Modifications_Movies() {
 
     MemWrite16(0x44F09B, 0x3539, 0xE890);
     FuncWrite32(0x44F09D, 0x4B47DC, (DWORD)&inflight_movie_audio_check);
+
+    //Remove call to mpeg2 closeMovie function on game exit.
+    MemWrite8(0x4760B0, 0xE8, 0x90);
+    MemWrite32(0x4760B1, 0x6BB1, 0x90909090);
     //---------------------------------------------------------
 }
 
