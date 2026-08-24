@@ -36,8 +36,8 @@ BYTE WC4_ACTIONS_KEYS[][2]{
 	0x00, 0x00,		// None,
 	0x00, 0x00,		// B1_Trigger,
 	0x00, 0x00,		// B2_Modifier,
-	0x00, 0x00,		// B3_Missile,
-	0x00, 0x00,		// B4_Lock_Closest_Enemy_And_Match_Speed,
+	0x1C, 0x00,		// B3_Missile,
+	0x15, 0x00,		// B4_Lock_Closest_Enemy_And_Match_Speed,
 
 	0x00, 0x48,		// Pitch_Down,
 	0x00, 0x50,		// Pitch_Up,
