@@ -196,6 +196,9 @@ static BOOL Play_HD_Movie_Sequence_Primary(char* mve_path) {
 
     Sleep(150);//add a small delay to reduce unintended button clicks after ending a movie by double-clicking.
 
+    while (Get_Key_State(0x1, 0, 0))
+        wc4_translate_messages_keys();
+
     Debug_Info_Movie("Play_HD_Movie_Sequence: Done:%d", play_successfull);
     return play_successfull;
 }
@@ -360,6 +363,9 @@ static BOOL Play_HD_Movie_Sequence_Secondary(void* p_wc4_movie_class, void* p_si
         *p_wc4_movie_frame_count += 1;//this global needs to be set to evoke the movie fade out function.
 
     Sleep(150);//add a small delay to reduce unintended button clicks after ending a movie by double-clicking.
+
+    while (Get_Key_State(0x1, 0, 0))
+        wc4_translate_messages_keys();
 
     Debug_Info_Movie("Play_HD_Movie_Sequence_Secondary: Done");
     return play_successfull;
