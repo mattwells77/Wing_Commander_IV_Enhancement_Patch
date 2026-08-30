@@ -388,6 +388,14 @@ static void __declspec(naked) print_scancode(void) {
 */
 
 #ifdef VERSION_WC4_DVD
+//_______________________________________
+void Modifications_Keyboard_ESC_To_Exit() {
+    //use ESC key to evoke Exit screen.
+    FuncReplace32(0x49D750, 0xFFFEB97C, (DWORD)&translate_msg_key_gui);
+    FuncReplace32(0x46F416, 0x019CB6, (DWORD)&translate_msg_key_space);
+}
+
+
 //___________________________
 void Modifications_Keyboard() {
 
@@ -412,10 +420,6 @@ void Modifications_Keyboard() {
     FuncReplace32(0x457DD8, 0x031464, (DWORD)&gui_alt_x_message_loop);
     FuncReplace32(0x457DE1, 0x03145B, (DWORD)&gui_alt_x_message_loop);
 
-    //use ESC key to evoke Exit screen.
-    FuncReplace32(0x49D750, 0xFFFEB97C, (DWORD)&translate_msg_key_gui);
-    FuncReplace32(0x46F416, 0x019CB6, (DWORD)&translate_msg_key_space);
-
     //set flags when auto takeoff and landing to prevent the ESC key evoking the Exit screen.
     FuncReplace32(0x404C60, 0xFFFFF92C, (DWORD)&mark_auto_take_off);
     FuncReplace32(0x404C8B, 0xFFFFFA91, (DWORD)&mark_auto_landing);
@@ -426,6 +430,14 @@ void Modifications_Keyboard() {
 }
 
 #else
+//_______________________________________
+void Modifications_Keyboard_ESC_To_Exit() {
+    //use ESC key to evoke Exit screen.
+    FuncReplace32(0x498CDA, 0x00015142, (DWORD)&translate_msg_key_gui);
+    FuncReplace32(0x4131E7, 0x09AC35, (DWORD)&translate_msg_key_space);
+}
+
+
 //___________________________
 void Modifications_Keyboard() {
 
@@ -448,10 +460,6 @@ void Modifications_Keyboard() {
 	//wait for yes no input in Alt+X message loop.
     FuncReplace32(0x46B1F4, 0x042FA8, (DWORD)&gui_alt_x_message_loop);
     FuncReplace32(0x46B1FD, 0x042F9F, (DWORD)&gui_alt_x_message_loop);
-
-    //use ESC key to evoke Exit screen.
-    FuncReplace32(0x498CDA, 0x00015142, (DWORD)&translate_msg_key_gui);
-    FuncReplace32(0x4131E7, 0x09AC35, (DWORD)&translate_msg_key_space);
 
     //set flags when auto takeoff and landing to prevent the ESC key evoking the Exit screen.
     FuncReplace32(0x41E4EF, 0xFFFFF84D, (DWORD)&mark_auto_take_off);

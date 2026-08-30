@@ -33,6 +33,7 @@ void Modifications_Controller_Enhancements();
 void Modifications_ObjectRotation();
 void Modifications_Music();
 void Modifications_Movies();
+void Modifications_Keyboard_ESC_To_Exit();
 
 void Set_WindowActive_State(BOOL isActive);
 

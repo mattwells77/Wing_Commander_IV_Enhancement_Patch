@@ -1524,6 +1524,8 @@ static void Start_Display_Setup(BOOL no_full_screen) {
         Modifications_Controller_Enhancements(); //Modifications_Joystick();
     if (ConfigReadInt(L"MAIN", L"ENABLE_MUSIC_ENHANCEMENTS", CONFIG_MAIN_ENABLE_MUSIC_ENHANCEMENTS))
         Modifications_Music();
+    if (ConfigReadInt(L"MAIN", L"ENABLE_ESC_KEY_TO_EXIT_GAME", CONFIG_MAIN_ENABLE_ESC_KEY_TO_EXIT_GAME))
+        Modifications_Keyboard_ESC_To_Exit();
 
     if (no_full_screen)
         *p_wc4_is_windowed = TRUE;
