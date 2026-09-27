@@ -455,6 +455,58 @@ static void __declspec(naked) update_object_turret_rotation(void) {
 #endif
 
 
+//__________________________________________________________________________________
+static void Update_Missile_Pitch(LONG i_obj_matrix[3][3], LONG* p_pitch_axis_offset) {
+
+    float f_p_axis = Rotation_to_Radians(-*p_pitch_axis_offset);
+
+    float f_calc_matrix[3][3]{ 0.0f };
+    float f_ret_matrix[3][3]{ 0.0f };
+    float f_obj_matrix[3][3]{ 0.0f };
+
+    float sinP = sin(f_p_axis);
+    float cosP = cos(f_p_axis);
+
+    f_calc_matrix[0][0] = 1.0f;
+    f_calc_matrix[0][1] = 0;
+    f_calc_matrix[0][2] = 0;
+    f_calc_matrix[1][0] = 0;
+    f_calc_matrix[1][1] = cosP;
+    f_calc_matrix[1][2] = -sinP;
+    f_calc_matrix[2][0] = 0;
+    f_calc_matrix[2][1] = sinP;
+    f_calc_matrix[2][2] = cosP;
+
+    CopyMatrix3x3(f_obj_matrix, i_obj_matrix);
+    //add new rotation to return matrix (general object).
+    MultiplyMatrices3x3(f_calc_matrix, f_obj_matrix, f_ret_matrix);
+
+    //fix accumulating errors when adding new rotations to low res (integer)matrix.
+    OrthonormalizeMatrix3x3_PremerlaniBizard(f_ret_matrix);
+    //OrthonormalizeMatrix3x3_GramSchmidt(ret_matrix);
+
+    //update object matrix
+    CopyMatrix3x3(i_obj_matrix, f_ret_matrix);
+}
+
+
+//______________________________________________________
+static void __declspec(naked) update_missile_pitch(void) {
+
+    __asm {
+        push esi
+
+        push eax
+        push ecx
+        call Update_Missile_Pitch
+        add esp, 0x8
+
+        pop esi
+        ret
+    }
+}
+
+
 //____________________________________________________________________
 static void PC_Rotation_Calulations(void* obj_struct, LONG frame_time) {
 
@@ -561,6 +613,14 @@ void Modifications_ObjectRotation() {
     MemWrite16(0x425902, 0x86BA, 0x0BEB);//JMP SHORT 0042590F
     MemWrite16(0x425904, 0x0005, 0x9090);
     //-----------------------------------------------------------------------
+
+    //update missile rotation matrix, pitch
+    MemWrite8(0x43A477, 0x50, 0x90);
+    FuncReplace32(0x43A479, 0x043633, (DWORD)&update_missile_pitch);
+    MemWrite8(0x43A47D, 0xB9, 0x90);
+    MemWrite32(0x43A47E, 0x4BC5D8, 0x90909090);
+    MemWrite8(0x43A482, 0xE8, 0x90);
+    MemWrite32(0x43A483, 0x043B99, 0x90909090);
 }
 
 #else
@@ -591,6 +651,14 @@ void Modifications_ObjectRotation() {
     MemWrite16(0x464F9D, 0x4E8D, 0x16EB);//JMP SHORT 00464FB5
     MemWrite8(0x464F9F, 0x34, 0x90);
     //-----------------------------------------------------------------------
+
+    //update missile rotation matrix, pitch
+    MemWrite8(0x462A9F, 0x50, 0x90);
+    FuncReplace32(0x462AA1, 0x03C86B, (DWORD)&update_missile_pitch);
+    MemWrite8(0x462AA5, 0xB9, 0x90);
+    MemWrite32(0x462AA6, 0x4C1D50, 0x90909090);
+    MemWrite8(0x462AAA, 0xE8, 0x90);
+    MemWrite32(0x462AAB, 0x03CE31, 0x90909090);
 }
 
 #endif
