@@ -220,6 +220,31 @@ static bool Display_Exit() {
 }
 
 
+//______________________________________________________________________________________________________________________________________________________________________________________________________________________________
+static HWND __stdcall CreateWindowEx_DPIAware(DWORD dwExStyle, LPCSTR lpClassName, LPCSTR lpWindowName, DWORD dwStyle, int X, int Y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam) {
+
+    //Set DPI Awareness before creating main window.
+    if (ConfigReadInt(L"MAIN", L"ENABLE_DPI_AWARENESS", CONFIG_MAIN_ENABLE_DPI_AWARENESS)) {
+        HMODULE hModule_user32 = GetModuleHandle(TEXT("user32.dll"));
+
+        BOOL(__stdcall * pSetProcessDpiAwarenessContext)(DPI_AWARENESS_CONTEXT value) = 0;
+        if (hModule_user32)
+            pSetProcessDpiAwarenessContext = (BOOL(__stdcall*)(DPI_AWARENESS_CONTEXT))GetProcAddress(hModule_user32, "SetProcessDpiAwarenessContext");
+
+        if (pSetProcessDpiAwarenessContext) {
+            if (!pSetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
+                Debug_Info_Error("SetProcessDpiAwarenessContext Failed! Last Error: %d", GetLastError());
+        }
+        else {
+            if (!SetProcessDPIAware())
+                Debug_Info_Error("SetProcessDPIAware Failed! Last Error: %d", GetLastError());
+        }
+    }
+
+    return *p_wc4_hWinMain = CreateWindowExA(dwExStyle, lpClassName, lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
+}
+
+
 //_________________________________
 static BOOL Window_Setup(HWND hwnd) {
     
@@ -2097,6 +2122,13 @@ void Modifications_Display() {
     MemWrite16(0x4891C9, 0xD08B, 0x9090);
     MemWrite8(0x4891CB, 0xF7, 0xE8);
     FuncWrite32(0x4891CC, 0x18FAC1D1, (DWORD)&check_sys_key);
+
+
+    //Allows the game to play at your monitors native resolution when your monitors Windows DPI Scale setting is above 100%.
+    MemWrite16(0x4767DF, 0x15FF, 0xE890);
+    FuncWrite32(0x4767E1, 0x4D454C, (DWORD)&CreateWindowEx_DPIAware);
+    MemWrite8(0x4767E7, 0xA3, 0x90);
+    MemWrite32(0x4767E8, 0x4D20B4, 0x90909090);
 }
 
 #else
@@ -2363,6 +2395,12 @@ void Modifications_Display() {
     //check for windowed mode toggle key combo(Alt+Enter) and controller setup key combo(Alt+J) in keyboard procedure.
     MemWrite8(0x4ADF22, 0xF7, 0xE8);
     FuncWrite32(0x4ADF23, 0x1FE8C1D0, (DWORD)&check_sys_key);
+
+
+    //Allows the game to play at your monitors native resolution when your monitors Windows DPI Scale setting is above 100%.
+    MemWrite16(0x410936, 0xD5FF, 0x9090);
+    MemWrite8(0x410938, 0xA3, 0xE8);
+    FuncWrite32(0x410939, 0x4DB724, (DWORD)&CreateWindowEx_DPIAware);
 }
 #endif
 
