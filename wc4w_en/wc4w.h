@@ -384,6 +384,7 @@ extern LONG* p_wc4_crosshair_target_area_size;
 extern int16_t* p_wc4_space_x;
 extern int16_t* p_wc4_space_y;
 
+extern DWORD* p_wc4_space_frame_time_ms_x4;
 
 extern BOOL(*wc4_draw_circle)(DRAW_BUFFER_MAIN* p_toBuff, LONG x, LONG y, DWORD width, DWORD height, DWORD pal_offset);
 

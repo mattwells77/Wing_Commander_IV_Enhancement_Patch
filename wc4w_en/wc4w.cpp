@@ -254,6 +254,9 @@ LONG(*wc4_draw_line)(DRAW_BUFFER_MAIN* p_db, LONG x1, LONG y1, LONG x2, LONG y2,
 int16_t* p_wc4_space_x = nullptr;
 int16_t* p_wc4_space_y = nullptr;
 
+DWORD* p_wc4_space_frame_time_ms_x4 = nullptr;
+
+
 #ifdef VERSION_WC4_DVD
 //_______________
 void WC4W_Setup() {
@@ -492,6 +495,8 @@ void WC4W_Setup() {
 
     p_wc4_space_x = (int16_t*)0x4CCB88;
     p_wc4_space_y = (int16_t*)0x4CCB8A;
+
+    p_wc4_space_frame_time_ms_x4 = (DWORD*)0x4C51CC;
 }
 
 #else
@@ -731,5 +736,7 @@ void WC4W_Setup() {
 
     p_wc4_space_x = (int16_t*)0x4CCE30;
     p_wc4_space_y = (int16_t*)0x4CCE32;
+
+    p_wc4_space_frame_time_ms_x4 = (DWORD*)0x4C0640;
 }
 #endif

@@ -585,6 +585,18 @@ static void __declspec(naked) pc_rotation_calulations(void) {
 #endif
 
 
+//______________________________________________________________
+static void __declspec(naked) regulate_destroyed_ship_spin(void) {
+    //original value 2560 = 10(frame time x 4 for 24fps) x 256 which should be space_frame_time_ms_x4 * 256;
+    __asm {
+        mov eax, p_wc4_space_frame_time_ms_x4
+        mov eax, dword ptr ds : [eax]
+        shl eax, 8
+        ret
+    }
+}
+
+
 #ifdef VERSION_WC4_DVD
 //_________________________________
 void Modifications_ObjectRotation() {
@@ -621,6 +633,10 @@ void Modifications_ObjectRotation() {
     MemWrite32(0x43A47E, 0x4BC5D8, 0x90909090);
     MemWrite8(0x43A482, 0xE8, 0x90);
     MemWrite32(0x43A483, 0x043B99, 0x90909090);
+
+    //bind destroyed ship spin to space frame time to regulate spin speed at different FPS.
+    MemWrite8(0x4675D9, 0xB8, 0xE8);
+    FuncWrite32(0x4675DA, 0x0A00, (DWORD)&regulate_destroyed_ship_spin);
 }
 
 #else
@@ -659,6 +675,10 @@ void Modifications_ObjectRotation() {
     MemWrite32(0x462AA6, 0x4C1D50, 0x90909090);
     MemWrite8(0x462AAA, 0xE8, 0x90);
     MemWrite32(0x462AAB, 0x03CE31, 0x90909090);
+
+    //bind destroyed ship spin to space frame time to regulate spin speed at different FPS.
+    MemWrite8(0x452DFC, 0xB8, 0xE8);
+    FuncWrite32(0x452DFD, 0x0A00, (DWORD)&regulate_destroyed_ship_spin);
 }
 
 #endif
