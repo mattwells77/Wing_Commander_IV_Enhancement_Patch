@@ -729,6 +729,101 @@ static void __declspec(naked) test_texture_address_2(void) {
     }
 }
 
+
+char current_mission_name[9]{ 0 };
+
+//__________________________________________________________
+static void Save_Current_Mission_Name(void* mission_struct) {
+    //when a new mission is loaded, copy the mission name and re-save the inflight save game(102) to set a new starting point.
+    memcpy(current_mission_name, (char*)mission_struct, 9);
+    current_mission_name[8] = '\0';
+    wc4_save_game(102, "Current Mission");
+}
+
+
+//___________________________________________________________
+static void __declspec(naked) save_current_mission_name(void) {
+
+    __asm {
+        pushad
+        push ecx
+        call Save_Current_Mission_Name
+        add esp, 0x4
+        popad
+        ret
+    }
+}
+
+
+//____________________________________________________
+static void Current_Mission_Name_To_CMD_Mission_Name() {
+    //insert the current mission in place of the command line mission name which is checked when mission is loaded.
+    if (current_mission_name[0] != '\0')
+        memcpy(p_wc4_cmd_mission_name, current_mission_name, 9);
+}
+
+
+//___________________________________________________________
+static void __declspec(naked) load_current_mission_name(void) {
+    //check for a command line mission name, if not set check for the saved mission name.
+    __asm {
+        mov eax, p_wc4_cmd_mission_name
+        cmp byte ptr ds : [eax] , 0
+        jne exit_func
+
+        pushad
+        call Current_Mission_Name_To_CMD_Mission_Name
+        popad
+
+        cmp byte ptr ds : [eax] , 0
+        exit_func :
+        ret
+    }
+}
+
+
+//____________________________________________________________
+static void __declspec(naked) clear_current_mission_name(void) {
+    //clear the current mission name when mission ends.
+    __asm {
+        lea eax, current_mission_name
+        mov byte ptr ds : [eax] , 0
+        push[esp + 0x4]
+        call wc4_delete_file
+        add esp, 0x4
+        ret
+    }
+}
+
+//______________________________________
+void Modifications_Replay_Last_Mission() {
+    //Reproduces the behaviour of the DOS version.
+    //Choosing replay after death or ejecting will return to the start of the last loaded mission instead of returning to the beginning and launching from the carrier.
+    //Only affects multi mission scenarios e.g. entering a planets atmosphere in mission.
+
+#ifdef VERSION_WC4_DVD
+    FuncReplace32(0x441FAC, 0x05FFA0, (DWORD)&save_current_mission_name);
+    FuncReplace32(0x442046, 0x05FF06, (DWORD)&save_current_mission_name);
+
+    MemWrite16(0x454922, 0x1D38, 0xE890);
+    FuncWrite32(0x454924, 0x4C4428, (DWORD)&load_current_mission_name);
+
+    FuncReplace32(0x454A4A, 0x057742, (DWORD)&clear_current_mission_name);
+
+#else
+    FuncReplace32(0x40CB8E, 0x184E, (DWORD)&save_current_mission_name);
+    FuncReplace32(0x40CC36, 0x17A6, (DWORD)&save_current_mission_name);
+
+    MemWrite16(0x474A78, 0x3D80, 0xE890);
+    FuncWrite32(0x474A7A, 0x4D3088, (DWORD)&load_current_mission_name);
+    MemWrite8(0x474A7E, 0x00, 0x90);
+
+    FuncReplace32(0x474BCB, 0x0428C7, (DWORD)&clear_current_mission_name);
+
+#endif
+}
+
+
 /*
 //_____________________________________________
 static void Proccess_Object(DWORD** func_array) {

@@ -256,6 +256,10 @@ int16_t* p_wc4_space_y = nullptr;
 
 DWORD* p_wc4_space_frame_time_ms_x4 = nullptr;
 
+BOOL(*wc4_save_game)(DWORD save_num, const char* title) = nullptr;
+BOOL(*wc4_delete_file)(const char* file_path) = nullptr;;
+char* p_wc4_cmd_mission_name = nullptr;
+
 
 #ifdef VERSION_WC4_DVD
 //_______________
@@ -497,6 +501,10 @@ void WC4W_Setup() {
     p_wc4_space_y = (int16_t*)0x4CCB8A;
 
     p_wc4_space_frame_time_ms_x4 = (DWORD*)0x4C51CC;
+
+    wc4_save_game = (BOOL(*)(DWORD, const char*))0x4515C0;
+    wc4_delete_file = (BOOL(*)(const char*))0x4AC190;
+    p_wc4_cmd_mission_name = (char*)0x4C4428;
 }
 
 #else
@@ -738,5 +746,9 @@ void WC4W_Setup() {
     p_wc4_space_y = (int16_t*)0x4CCE32;
 
     p_wc4_space_frame_time_ms_x4 = (DWORD*)0x4C0640;
+
+    wc4_save_game = (BOOL(*)(DWORD, const char*))0x479180;
+    wc4_delete_file = (BOOL(*)(const char*))0x4B7496;
+    p_wc4_cmd_mission_name = (char*)0x4D3088;
 }
 #endif

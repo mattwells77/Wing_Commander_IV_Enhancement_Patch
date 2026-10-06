@@ -386,6 +386,8 @@ extern int16_t* p_wc4_space_y;
 
 extern DWORD* p_wc4_space_frame_time_ms_x4;
 
+extern char* p_wc4_cmd_mission_name;
+
 extern BOOL(*wc4_draw_circle)(DRAW_BUFFER_MAIN* p_toBuff, LONG x, LONG y, DWORD width, DWORD height, DWORD pal_offset);
 
 extern void(__thiscall* wc4_draw_hud_targeting_elements)(void*);
@@ -459,3 +461,6 @@ extern void(__thiscall* wc4_flight_auto_landing)(void*);
 extern LONG(*wc4_shape_draw)(DRAW_BUFFER_MAIN* p_db, void* shape_data, DWORD shape_num, DWORD x, DWORD y);
 extern DWORD(*wc4_shape_get_width_height)(void* shape_data, DWORD shape_num);
 extern LONG(*wc4_draw_line)(DRAW_BUFFER_MAIN* p_db, LONG x1, LONG y1, LONG x2, LONG y2, DWORD arg6, DWORD colour_ref);
+
+extern BOOL(*wc4_save_game)(DWORD save_num, const char* title);
+extern BOOL(*wc4_delete_file)(const char* file_path);

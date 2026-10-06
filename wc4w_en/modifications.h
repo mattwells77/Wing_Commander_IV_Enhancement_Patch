@@ -34,6 +34,7 @@ void Modifications_ObjectRotation();
 void Modifications_Music();
 void Modifications_Movies();
 void Modifications_Keyboard_ESC_To_Exit();
+void Modifications_Replay_Last_Mission();
 
 void Set_WindowActive_State(BOOL isActive);
 
