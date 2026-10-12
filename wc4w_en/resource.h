@@ -253,6 +253,8 @@
 #define IDC_COMBO_AXIS_RANGE            1081
 #define IDC_STATIC_AS_BUTTON_1          1082
 #define IDC_STATIC_AS_BUTTON_2          1083
+#define IDC_EDIT1                       1084
+#define IDC_EDIT_DEADZONE               1084
 #define IDC_STATIC                      -1
 #define IDC_STATIC_XY_BOX               -1
 
@@ -263,7 +265,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        150
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1084
+#define _APS_NEXT_CONTROL_VALUE         1085
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif
