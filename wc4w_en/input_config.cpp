@@ -3012,7 +3012,6 @@ static INT_PTR CALLBACK DialogProc_Config_Mouse(HWND hwndDlg, UINT uMsg, WPARAM 
 static INT_PTR CALLBACK DialogProc_Config_Control(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	
 	static HWND hwndParent = nullptr;
-	static bool was_Deactivated = false;
 	static HWND hWin_Config_Joy_Active = nullptr;
 
 	switch (uMsg) {
@@ -3055,7 +3054,7 @@ static INT_PTR CALLBACK DialogProc_Config_Control(HWND hwndDlg, UINT uMsg, WPARA
 		SetWindowPos(hwndDlg, nullptr, rcParent.left + ((rcParent.right - rcParent.left) - (rc_Win.right - rc_Win.left)) / 2, rc_Win.top + ((rcParent.bottom - rcParent.top) - (rc_Win.bottom - rc_Win.top)) / 2, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 
 		//disable main window while this dialog is running.
-		EnableWindow(hwndParent, FALSE);
+		//EnableWindow(hwndParent, FALSE);
 
 		//create tab windows.
 		if (controller_enhancements_enabled) {
@@ -3128,7 +3127,7 @@ static INT_PTR CALLBACK DialogProc_Config_Control(HWND hwndDlg, UINT uMsg, WPARA
 			if (controller_enhancements_enabled)
 				Joysticks.Save();
 			Mouse.Save();
-			EnableWindow(hwndParent, TRUE);
+			//EnableWindow(hwndParent, TRUE);
 			DestroyWindow(hwndDlg);
 			return FALSE;
 		}
@@ -3136,7 +3135,7 @@ static INT_PTR CALLBACK DialogProc_Config_Control(HWND hwndDlg, UINT uMsg, WPARA
 			if (controller_enhancements_enabled)
 				Joysticks.Load();
 			Mouse.Load();
-			EnableWindow(hwndParent, TRUE);
+			//EnableWindow(hwndParent, TRUE);
 			DestroyWindow(hwndDlg);
 			return FALSE;
 		}
@@ -3148,24 +3147,15 @@ static INT_PTR CALLBACK DialogProc_Config_Control(HWND hwndDlg, UINT uMsg, WPARA
 		if (controller_enhancements_enabled)
 			Joysticks.Load();
 		Mouse.Load();
-		EnableWindow(hwndParent, TRUE);
+		//EnableWindow(hwndParent, TRUE);
 		DestroyWindow(hwndDlg);
 		return FALSE;
 	case WM_DESTROY: {
 		hWin_Config_Control = nullptr;
 		hWin_Config_Joy_Active = nullptr;
-		if (was_Deactivated)
-			Set_WindowActive_State(TRUE);
+		SetFocus(hwndParent);
 		return FALSE;
 	}
-	case WM_ACTIVATEAPP:
-		//WM_ACTIVATEAPP:wParam==FALSE wont be received with the parent window disabled so Set_WindowActive_State(TRUE) on exit to return re-enable fullscreen window.
-		if (wParam == FALSE)
-			was_Deactivated = true;
-		else
-			was_Deactivated = false;
-
-		return FALSE;
 	default:
 		return FALSE;
 		break;
