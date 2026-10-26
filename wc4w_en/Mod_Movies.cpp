@@ -37,6 +37,9 @@ LibVlc_Movie* pMovie_vlc = nullptr;
 //_____________________________________________________________________________________
 static BOOL DrawVideoFrame(VIDframe* vidFrame, RGBQUAD* tBuff, UINT tWidth, DWORD flag) {
 
+    static BYTE movie_colour_mode = *p_wc4_movie_colour_bit_level;
+    static WORD* movie_buff_16bit = nullptr;
+
     static SCALE_TYPE scale_type = SCALE_TYPE::fit;
     static bool linear_upscaling = false;
     static bool run_once = false;
@@ -58,25 +61,61 @@ static BOOL DrawVideoFrame(VIDframe* vidFrame, RGBQUAD* tBuff, UINT tWidth, DWOR
         xan_flags |= 2;
     }
 
-    if (!surface_movieXAN || width != surface_movieXAN->GetWidth() || height != surface_movieXAN->GetHeight()) {
+    if (movie_colour_mode != *p_wc4_movie_colour_bit_level || !surface_movieXAN || width != surface_movieXAN->GetWidth() || height != surface_movieXAN->GetHeight()) {
+        movie_colour_mode = *p_wc4_movie_colour_bit_level;
         if (surface_movieXAN)
             delete surface_movieXAN;
-        surface_movieXAN = new DrawSurface8_RT(0, 0, width, height, 32, 0x00000000, false, 0);
+        if (movie_buff_16bit)
+            delete[] movie_buff_16bit;
+
+        if(movie_colour_mode == 1)
+            surface_movieXAN = new DrawSurface8_RT(0, 0, width, height, 32, 0x00000000, false, 0);
+        else if (movie_colour_mode == 2) {
+            movie_buff_16bit = new WORD[width * height];
+            surface_movieXAN = new DrawSurface(0, 0, width, height, 32, 0);
+        }
+        else 
+            return FALSE;
         surface_movieXAN->ScaleTo((float)clientWidth, (float)clientHeight, scale_type);
         if (!linear_upscaling)
             surface_movieXAN->Set_Default_SamplerState(pd3dPS_SamplerState_Point);
-        Debug_Info("surface_movieXAN created");
+        Debug_Info_Movie("surface_movieXAN created: %dx%d",width, height);
     }
     //Debug_Info("%X,%X,%X,%X,%X,%X,%X,%X,%X,%X,%X", vidFrame->unknown00, vidFrame->unknown04, vidFrame->unknown08, vidFrame->width, vidFrame->height, vidFrame->unknown14, vidFrame->bitFlag, vidFrame->unknown1C, vidFrame->unknown20, vidFrame->unknown24);
 
-    BYTE* pSurface = nullptr;
-    LONG pitch = 0;
-
-    if (surface_movieXAN->Lock((VOID**)&pSurface, &pitch) != S_OK)
+    if (!surface_movieXAN)
         return FALSE;
 
-    (*p_wc4_xanlib_drawframeXD)(vidFrame, pSurface, pitch, xan_flags);
+    BYTE* pSurface = nullptr;
+    LONG pitch = 0;
+    
+    if (surface_movieXAN->Lock((VOID**)&pSurface, &pitch) != S_OK)
+        return FALSE;
+    
+    if (movie_colour_mode == 1)
+        (*p_wc4_xanlib_drawframeXD)(vidFrame, pSurface, pitch, xan_flags);
+    else if (movie_colour_mode == 2 && movie_buff_16bit) {
+        (*p_wc4_xanlib_drawframeXD)(vidFrame, (BYTE*)movie_buff_16bit, width, xan_flags);
+        WORD* pBuff_16 = movie_buff_16bit;
+       
+        for (UINT y = 0; y < height; y++) {
+            BYTE* pixel_32 = pSurface;
+            WORD* pixel_16 = pBuff_16;
+            if (*p_wc4_movie_no_interlace || !(y % 2)) {
+                for (UINT x = 0; x < width; x++) {
+                    pixel_32[0] = (*pixel_16 & 0x1F) << 3;          //B
+                    pixel_32[1] = ((*pixel_16 >> 5) & 0x1F) << 3;   //G
+                    pixel_32[2] = ((*pixel_16 >> 10) & 0x1F) << 3;  //R
+                    pixel_32[3] = 0xFF;                             //A
 
+                    pixel_16++;
+                    pixel_32 += 4;
+                }
+            }
+            pBuff_16 += width;
+            pSurface += pitch;
+        }
+    }
     surface_movieXAN->Unlock();
 
     return TRUE;
@@ -893,9 +932,11 @@ void Modifications_Movies() {
     FuncReplace32(0x47CAAA, 0xFFFF9A42, (DWORD)&UnlockShowMovieSurface);
 
     //clear conversation choice text buffers
+    MemWrite16(0x4591B0, 0x2A7D, 0x9090);//make 16bit movies use Movie_Clear_Choice_Background
     MemWrite8(0x4591BA, 0xE8, 0x90);
     MemWrite32(0x4591BB, 0x01E5B1, 0x90909090);
     FuncReplace32(0x4591D3, 0x01E599, (DWORD)&Movie_Clear_Choice_Background);
+    MemWrite16(0x459502, 0x277D, 0x9090);//make 16bit movies use Movie_Clear_Choice_Background
     MemWrite8(0x45950C, 0xE8, 0x90);
     MemWrite32(0x45950D, 0x01E25F, 0x90909090);
     FuncReplace32(0x459525, 0x01E247, (DWORD)&Movie_Clear_Choice_Background);
@@ -915,6 +956,16 @@ void Modifications_Movies() {
 
     MemWrite8(0x47A4CD, 0x50, 0x51);//PUSH ECX, un-altered to buffer pointer.
     FuncReplace32(0x47A4CF, 0x040D, (DWORD)&Movie_Draw_Subtitle_Buffer);
+
+    //force 8bit colour selection when drawing movie text.
+    MemWrite16(0x47A450, 0x0D8A, 0x01B1);
+    MemWrite32(0x47A452, 0x4CB9C4, 0x90909090);
+
+    MemWrite16(0x47A615, 0x0D8A, 0x01B1);
+    MemWrite32(0x47A617, 0x4CB9C4, 0x90909090);
+
+    MemWrite16(0x47B160, 0x158A, 0x01B2);
+    MemWrite32(0x47B162, 0x4CB9C4, 0x90909090);
 
     // HD Movies-----------------------------------------------
     //skip is_vob_playback check
@@ -989,9 +1040,11 @@ void Modifications_Movies() {
     FuncReplace32(0x484EEA, 0xFFF8AF02, (DWORD)&UnlockShowMovieSurface);
 
     //clear conversation choice text buffers
+    MemWrite16(0x46C5D4, 0x2B7D, 0x9090);//make 16bit movies use Movie_Clear_Choice_Background
     MemWrite8(0x46C5DF, 0xE8, 0x90);
     MemWrite32(0x46C5E0, 0xFFFA495C, 0x90909090);
     FuncReplace32(0x46C5F8, 0xFFFA4944, (DWORD)&Movie_Clear_Choice_Background);
+    MemWrite16(0x46C90A, 0x287D, 0x9090);//make 16bit movies use Movie_Clear_Choice_Background
     MemWrite8(0x46C915, 0xE8, 0x90);
     MemWrite32(0x46C916, 0xFFFA4626, 0x90909090);
     FuncReplace32(0x46C92E, 0xFFFA460E, (DWORD)&Movie_Clear_Choice_Background);
@@ -1010,6 +1063,16 @@ void Modifications_Movies() {
 
     MemWrite16(0x482ED6, 0xC103, 0x9090);//un-altered buffer pointer.
     FuncReplace32(0x482EDA, 0xFFFFF812, (DWORD)&Movie_Draw_Subtitle_Buffer);
+
+    //force 8bit colour selection when drawing movie text.
+    MemWrite16(0x482E5F, 0x0D8A, 0x01B1);
+    MemWrite32(0x482E61, 0x4D94A8, 0x90909090);
+
+    MemWrite16(0x48302B, 0x0D8A, 0x01B1);
+    MemWrite32(0x48302D, 0x4D94A8, 0x90909090);
+
+    MemWrite8(0x483F3A, 0xA0, 0xB0);
+    MemWrite32(0x483F3B, 0x4D94A8, 0x90909001);
 
     // HD Movies-----------------------------------------------
     //Replaces the Play_Movie function similar to the dvd version of WC4.

@@ -946,6 +946,10 @@ public:
 
     float GetScaledWidth() const { return (float)width * scaleX; };
     float GetScaledHeight() const { return height * scaleY; };
+
+    virtual HRESULT Lock(VOID** lpSurface, LONG* p_lPitch) { return S_OK; };
+    virtual HRESULT Unlock() { return S_OK; };
+    virtual BOOL Clear_Texture(DWORD colour) { return TRUE; };
 protected:
     ID3D11PixelShader* p_pixel_shader;
     ID3D11SamplerState* p_sampler_state;
@@ -1118,8 +1122,7 @@ extern DrawSurface8_RT* surface_gui;
 extern DrawSurface* surface_space3D;
 extern DrawSurface8_RT* surface_space2D;
 extern DrawSurface8_RT* surface_space_targeting_hud;
-extern DrawSurface8_RT* surface_movieXAN;
-
+extern BASE_DISPLAY_SURFACE* surface_movieXAN;
 extern BOOL is_nav_view;
 
 void Palette_Update(BYTE* p_pal_buff, BYTE offset, DWORD num_entries);

@@ -1936,7 +1936,7 @@ void Modifications_Display() {
     MemWrite16(0x46FA51, 0x1D89, 0xA390);//set to eax
 
     //Force current video colour bit level to stay at 1(8 bit colour) in set game flags function.
-    MemWrite32(0x46AA3A, 0x02, 0x01);
+    //MemWrite32(0x46AA3A, 0x02, 0x01);
 
     //prevent movie and gameflow bit level being set to 16bit in settings menu.
     //movie_video_colour_bit_level
@@ -2198,7 +2198,7 @@ void Modifications_Display() {
     //Prevent cmd line arg true colour mode from being enabled.
     MemWrite32(0x4013E5, 0x01, 0x00);
     //Force current video colour bit level to stay at 1(8 bit colour) in set game flags function.
-    MemWrite32(0x40F296, 0x02, 0x01);
+    //MemWrite32(0x40F296, 0x02, 0x01);
 
     //prevent movie and gameflow bit level being set to 16bit in settings menu.
     //movie_video_colour_bit_level

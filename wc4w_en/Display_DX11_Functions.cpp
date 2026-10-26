@@ -116,7 +116,7 @@ DrawSurface8_RT* surface_gui = nullptr;
 DrawSurface* surface_space3D = nullptr;
 DrawSurface8_RT* surface_space2D = nullptr;
 DrawSurface8_RT* surface_space_targeting_hud = nullptr;
-DrawSurface8_RT* surface_movieXAN = nullptr;
+BASE_DISPLAY_SURFACE* surface_movieXAN = nullptr;
 
 RenderTarget* rt_display = nullptr;
 
