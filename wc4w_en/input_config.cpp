@@ -3232,6 +3232,7 @@ BOOL JoyConfig_Main() {
 		return FALSE;
 	}
 
+	SetCursor(LoadCursor(nullptr, IDC_ARROW));
 	ShowCursor(TRUE);
 
 	while (hWin_Config_Control != nullptr) {
