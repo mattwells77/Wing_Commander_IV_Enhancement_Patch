@@ -43,3 +43,5 @@ void Music_Class_Destructor();
 #endif
 
 void Palette_Update_Main(BYTE* p_pal_buff, BYTE offset, DWORD num_entries);
+
+extern bool is_Music_Player_Initializing;

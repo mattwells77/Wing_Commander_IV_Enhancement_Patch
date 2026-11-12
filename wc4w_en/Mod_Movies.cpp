@@ -185,6 +185,9 @@ static void __declspec(naked) movie_fade_out(void) {
 //________________________________________________________
 static BOOL Play_HD_Movie_Sequence_Primary(char* mve_path) {
 
+    while (is_Music_Player_Initializing)//attempting to play a movie before vlc music is initialized can cause instability.
+        Sleep(0);
+
     //char* mve_path = (char*)((DWORD*)p_wc4_movie_class)[28];
     Debug_Info_Movie("Play_HD_Movie_Sequence: main_path: %s", mve_path);
     Debug_Info_Movie("Play_HD_Movie_Sequence: current_list_num: %d", *p_wc4_movie_branch_current_list_num);
@@ -341,6 +344,10 @@ static void __declspec(naked) play_hd_movie_sequence_main(void) {
 
 //___________________________________________________________________________________________________________________
 static BOOL Play_HD_Movie_Sequence_Secondary(void* p_wc4_movie_class, void* p_sig_movie_class, DWORD sig_movie_flags) {
+    
+    while (is_Music_Player_Initializing)//attempting to play a movie before vlc music is initialized can cause instability.
+        Sleep(0);
+    
     LONG length = sig_movie_flags;
     void* xanlib_this = *((void**)p_wc4_movie_class);
     BOOL(__thiscall * p_wc4_xanlib_set_pos)(void*, LONG, LONG*) = (BOOL(__thiscall*)(void*, LONG, LONG*)) * ((void**)xanlib_this + 0x30);
@@ -541,6 +548,9 @@ static BOOL Play_Inflight_Movie(HUD_CLASS_01* p_hud_class_01) {
             //iff files modified to play movies divided into scenes DON'T INCLUDE an extension in their file name. 
             //if the movie file name has an extension, DON'T ADD a letter appendix by setting "appendix_offset = -1".
             char* ext = strrchr((*pp_movie_class_inflight_01)->file_name, '.');
+
+            while (is_Music_Player_Initializing)//attempting to play a movie before vlc music is initialized can cause instability.
+                Sleep(0);
 
             if (ext) {
                 DWORD length_frames = Get_Num_Frames_Between_Timecodes_30fps(0, (*pp_movie_class_inflight_01)->timecode_duration_30fps);
