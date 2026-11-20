@@ -597,6 +597,50 @@ static void __declspec(naked) regulate_destroyed_ship_spin(void) {
 }
 
 
+//______________________________________________________________________
+static LONG __cdecl Regulate_Capital_Ship_Turn_Limit(LONG turn_limit) {
+    //capital ship turns per frame are limited to their turn rate x frame time, but never less than 0x100 (1 degree per frame).
+    //0x100 was set for 24fps (frame time x 4 = 10), at 60fps it lets capital ships turn at 60 degrees per second, at 24fps it was 24.
+    //scale the minimum by the space frame time so capital ships turn at the original rate at any FPS.
+    LONG frame_time = (LONG)*p_wc4_space_frame_time_ms_x4;
+    LONG turn_floor = 0x100;
+    if (frame_time > 0) {
+        turn_floor = 0x100 * frame_time / 10;
+        if (turn_floor < 1)
+            turn_floor = 1;
+    }
+    if (turn_limit < turn_floor)
+        return turn_floor;
+    return turn_limit;
+}
+
+
+//_____________________________________________________________
+static void __declspec(naked) regulate_capital_ship_turn_limit(void) {
+    //replaces "cmp eax, 0x100; jge; mov eax, 0x100", eax = turn limit in and out.
+    __asm {
+        push ecx
+        push edx
+        push eax
+        call Regulate_Capital_Ship_Turn_Limit
+        add esp, 0x4
+        pop edx
+        pop ecx
+        ret
+    }
+}
+
+
+//______________________________________________________________
+static void Modifications_Capital_Ship_Turn_Limit(DWORD address) {
+    MemWrite8(address, 0x3D, 0xE8);
+    FuncWrite32(address + 1, 0x0100, (DWORD)&regulate_capital_ship_turn_limit);
+    MemWrite16(address + 5, 0x057D, 0x9090);
+    MemWrite8(address + 7, 0xB8, 0x90);
+    MemWrite32(address + 8, 0x0100, 0x90909090);
+}
+
+
 #ifdef VERSION_WC4_DVD
 //_________________________________
 void Modifications_ObjectRotation() {
@@ -637,6 +681,11 @@ void Modifications_ObjectRotation() {
     //bind destroyed ship spin to space frame time to regulate spin speed at different FPS.
     MemWrite8(0x4675D9, 0xB8, 0xE8);
     FuncWrite32(0x4675DA, 0x0A00, (DWORD)&regulate_destroyed_ship_spin);
+
+    //bind the minimum capital ship turn rate to space frame time, capital ships were turning too fast at higher FPS.
+    Modifications_Capital_Ship_Turn_Limit(0x413FCF);
+    Modifications_Capital_Ship_Turn_Limit(0x414024);
+    Modifications_Capital_Ship_Turn_Limit(0x41407F);
 }
 
 #else
@@ -679,6 +728,11 @@ void Modifications_ObjectRotation() {
     //bind destroyed ship spin to space frame time to regulate spin speed at different FPS.
     MemWrite8(0x452DFC, 0xB8, 0xE8);
     FuncWrite32(0x452DFD, 0x0A00, (DWORD)&regulate_destroyed_ship_spin);
+
+    //bind the minimum capital ship turn rate to space frame time, capital ships were turning too fast at higher FPS.
+    Modifications_Capital_Ship_Turn_Limit(0x456368);
+    Modifications_Capital_Ship_Turn_Limit(0x4563D0);
+    Modifications_Capital_Ship_Turn_Limit(0x456434);
 }
 
 #endif
