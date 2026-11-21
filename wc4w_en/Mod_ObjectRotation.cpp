@@ -376,6 +376,70 @@ static void __declspec(naked) update_object_rotation(void) {
 #endif
 
 
+//_____________________________________________________________________________
+static void Update_Cap_Ship_Rotation(LONG i_obj_matrix[3][3], LONG* obj_struct) {
+
+    LONG p_axis = obj_struct[17];
+    LONG y_axis = obj_struct[18];
+    LONG r_axis = obj_struct[19];
+
+    float f_y_axis = Rotation_to_Radians(-y_axis);
+    float f_p_axis = Rotation_to_Radians(-p_axis);
+    float f_r_axis = Rotation_to_Radians(-r_axis);
+
+    float f_calc_matrix[3][3]{ 0.0f };
+    float f_ret_matrix[3][3]{ 0.0f };
+
+    float sinP = sin(f_p_axis);
+    float cosP = cos(f_p_axis);
+    float sinR = sin(f_r_axis);
+    float cosR = cos(f_r_axis);
+    float sinY = sin(f_y_axis);
+    float cosY = cos(f_y_axis);
+
+    f_calc_matrix[0][0] = cosR * cosY;
+    f_calc_matrix[0][1] = sinP * sinR * cosY - cosP * sinY;
+    f_calc_matrix[0][2] = sinP * sinY + cosP * sinR * cosY;
+    f_calc_matrix[1][0] = cosR * sinY;
+    f_calc_matrix[1][1] = cosP * cosY + sinP * sinR * sinY;
+    f_calc_matrix[1][2] = cosP * sinR * sinY - sinP * cosY;
+    f_calc_matrix[2][0] = -sinR;
+    f_calc_matrix[2][1] = sinP * cosR;
+    f_calc_matrix[2][2] = cosP * cosR;
+
+    float f_obj_matrix[3][3]{ 0.0f };
+
+    CopyMatrix3x3(f_obj_matrix, i_obj_matrix);
+    //add new rotation to return matrix (general object).
+    MultiplyMatrices3x3(f_calc_matrix, f_obj_matrix, f_ret_matrix);
+
+    //fix accumulating errors when adding new rotations to low res (integer)matrix.
+    OrthonormalizeMatrix3x3_PremerlaniBizard(f_ret_matrix);
+    //OrthonormalizeMatrix3x3_GramSchmidt(ret_matrix);
+
+    //update object matrix
+    CopyMatrix3x3(i_obj_matrix, f_ret_matrix);
+}
+
+
+//__________________________________________________________
+static void __declspec(naked) update_cap_ship_rotation(void) {
+
+    __asm {
+        pushad
+        mov ecx, dword ptr ds : [esi + 0x8]
+        add ecx, 0x34
+        push esi
+        push ecx
+        call Update_Cap_Ship_Rotation
+        add esp, 0x8
+        popad
+
+        ret
+    }
+}
+
+
 //____________________________________________________________________________________________________________________
 static void Update_Object_Turret_Rotation(LONG i_obj_matrix[3][3], LONG* p_yaw_axis_offset, LONG* p_pitch_axis_offset) {
 
@@ -609,6 +673,11 @@ void Modifications_ObjectRotation() {
     MemWrite16(0x423698, 0xF8C1, 0xE990);//JMP 00423834
     MemWrite32(0x42369A, 0x04FDC104, 0x0196);
 
+    //remove NPC ships rotation minimum limits.
+    MemWrite8(0x42376A, 0x7D, 0xEB);
+    MemWrite8(0x4237BB, 0x7D, 0xEB);
+    MemWrite8(0x42380A, 0x7D, 0xEB);
+
     //update object rotation matrix.
     MemWrite16(0x423EF3, 0x4E8B, 0xE890);
     FuncWrite32(0x423EF5, 0x50468D08, (DWORD)&update_object_rotation);
@@ -637,6 +706,19 @@ void Modifications_ObjectRotation() {
     //bind destroyed ship spin to space frame time to regulate spin speed at different FPS.
     MemWrite8(0x4675D9, 0xB8, 0xE8);
     FuncWrite32(0x4675DA, 0x0A00, (DWORD)&regulate_destroyed_ship_spin);
+
+    //-----Cap-Ship-rotation-improvements-------------------------------
+    //remove cap ship rotation min limits.
+    MemWrite8(0x413FD4, 0x7D, 0xEB);
+    MemWrite8(0x414029, 0x7D, 0xEB);
+    MemWrite8(0x414084, 0x7D, 0xEB);
+
+    //update cap ship rotation matrix.
+    MemWrite8(0x414308, 0x8B, 0xE8);
+    FuncWrite32(0x414309, 0x468D084E, (DWORD)&update_cap_ship_rotation);
+    //jump over regular rotation update functions
+    MemWrite16(0x41430D, 0x5048, 0x23EB);//JMP SHORT 00414332
+    //------------------------------------------------------------------
 }
 
 #else
@@ -650,6 +732,11 @@ void Modifications_ObjectRotation() {
     //jump over original rotation calculations.
     MemWrite16(0x454FC2, 0x4389, 0xE990);//JMP 00455161
     MemWrite32(0x454FC4, 0x04FFC170, 0x0199);
+
+    //remove NPC ships rotation minimum limits
+    MemWrite8(0x45508A, 0x7D, 0xEB);
+    MemWrite8(0x4550DE, 0x7D, 0xEB);
+    MemWrite8(0x455132, 0x7D, 0xEB);
 
     //update object rotation matrix.
     MemWrite16(0x455883, 0x438D, 0xE890);
@@ -679,6 +766,19 @@ void Modifications_ObjectRotation() {
     //bind destroyed ship spin to space frame time to regulate spin speed at different FPS.
     MemWrite8(0x452DFC, 0xB8, 0xE8);
     FuncWrite32(0x452DFD, 0x0A00, (DWORD)&regulate_destroyed_ship_spin);
+
+    //-----Cap-Ship-rotation-improvements-------------------------------
+    //remove NPC cap ship rotation minimum limits
+    MemWrite8(0x45636D, 0x7D, 0xEB);
+    MemWrite8(0x4563D5, 0x7D, 0xEB);
+    MemWrite8(0x456439, 0x7D, 0xEB);
+
+    //update cap ship rotation matrix.
+    MemWrite8(0x4566F7, 0x8D, 0xE8);
+    FuncWrite32(0x4566F8, 0x4E8B4846, (DWORD)&update_cap_ship_rotation);
+    //jump over regular rotation update functions
+    MemWrite16(0x4566FC, 0x5008, 0x26EB);//JMP SHORT 00456724
+    //------------------------------------------------------------------
 }
 
 #endif
